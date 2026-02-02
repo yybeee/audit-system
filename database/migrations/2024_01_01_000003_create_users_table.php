@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('username')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['super_admin', 'auditor', 'staff_departemen', 'supervisor'])->default('staff_departemen');
+            $table->enum('role', ['super_admin', 'auditor', 'staff_departemen'])->default('staff_departemen');
             $table->foreignId('department_id')->nullable()->constrained('departments')->onDelete('set null');
             $table->boolean('is_active')->default(true);
             $table->rememberToken();
