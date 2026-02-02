@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="id">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Offline - Audit System</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family:
+                    "Inter",
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    "Segoe UI",
+                    sans-serif;
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+
+            .offline-container {
+                background: white;
+                border-radius: 24px;
+                padding: 48px 32px;
+                text-align: center;
+                max-width: 400px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            }
+
+            .offline-icon {
+                width: 120px;
+                height: 120px;
+                margin: 0 auto 24px;
+                background: #f3f4f6;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 64px;
+            }
+
+            h1 {
+                font-size: 24px;
+                font-weight: 700;
+                color: #1f2937;
+                margin-bottom: 12px;
+            }
+
+            p {
+                color: #6b7280;
+                line-height: 1.6;
+                margin-bottom: 24px;
+            }
+
+            .retry-btn {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                border: none;
+                padding: 14px 32px;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 16px;
+                cursor: pointer;
+                transition: transform 0.2s ease;
+            }
+
+            .retry-btn:hover {
+                transform: translateY(-2px);
+            }
+
+            .wifi-icon {
+                position: relative;
+                display: inline-block;
+            }
+
+            .wifi-slash {
+                color: #ef4444;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="offline-container">
+            <div class="offline-icon">
+                <span class="wifi-icon">📡</span>
+            </div>
+            <h1>Tidak Ada Koneksi Internet</h1>
+            <p>
+                Maaf, Anda sedang offline. Periksa koneksi internet Anda dan
+                coba lagi.
+            </p>
+            <button class="retry-btn" onclick="window.location.reload()">
+                🔄 Coba Lagi
+            </button>
+        </div>
+
+        <script>
+            // Auto reload when back online
+            window.addEventListener("online", () => {
+                window.location.reload();
+            });
+        </script>
+    </body>
+</html>
