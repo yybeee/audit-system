@@ -203,18 +203,22 @@ class ReportController extends Controller
         
         // Validasi input deadline
         $validated = request()->validate([
-            'deadline' => 'required|date|after:today'
-        ], [
-            'deadline.required' => 'Tanggal deadline harus diisi.',
-            'deadline.date' => 'Format tanggal tidak valid.',
-            'deadline.after' => 'Tanggal deadline harus setelah hari ini.'
-        ]);
-        
-        // Update status dan deadline
-        $report->status = 'in_progress';
-        $report->started_at = now();
-        $report->deadline = $validated['deadline'];
-        $report->save();
+        'deadline' => 'required|date|after:today',
+        'deadline_reason' => 'required|string|min:5'
+    ], [
+        'deadline.required' => 'Tanggal deadline harus diisi.',
+        'deadline.date' => 'Format tanggal tidak valid.',
+        'deadline.after' => 'Tanggal deadline harus setelah hari ini.',
+        'deadline_reason.required' => 'Keterangan deadline harus diisi.',
+        'deadline_reason.min' => 'Keterangan deadline minimal 5 karakter.'
+    ]);
+
+    // Update status dan deadline
+    $report->status = 'in_progress';
+    $report->started_at = now();
+    $report->deadline = $validated['deadline'];
+    $report->deadline_reason = $validated['deadline_reason'];
+    $report->save();
         
         return redirect()->route('reports.show', $id)
             ->with('success', 'Progress laporan telah dimulai. Deadline: ' . \Carbon\Carbon::parse($validated['deadline'])->locale('id')->format('d F Y'));

@@ -108,22 +108,32 @@
                             $isFixed = in_array($report->status, ['fixed', 'approved']);
                         @endphp
                         
-                        <div class="alert {{ $isFixed ? 'alert-success' : 'alert-info' }} mt-4">
-                            <strong><i class="bi bi-calendar-event"></i> Deadline:</strong> 
-                            {{ $deadline->locale('id')->format('d F Y') }}
-                            
-                            @if($isFixed)
-                                <span class="badge bg-success">
-                                    <i class="bi bi-check-circle-fill"></i> Selesai Tepat Waktu
-                                </span>
-                            @else
-                                @if($daysLeft > 0)
-                                    <span class="badge bg-success">{{ $daysLeft }} hari tersisa</span>
-                                @elseif($daysLeft == 0)
-                                    <span class="badge bg-warning text-dark">Deadline hari ini!</span>
-                                @else
-                                    <span class="badge bg-danger">Terlambat {{ abs($daysLeft) }} hari</span>
-                                @endif
+                        <div class="alert {{ $isFixed ? 'alert-success' : ($daysLeft < 0 ? 'alert-danger' : 'alert-info') }} mt-4">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div>
+                                    <strong><i class="bi bi-calendar-event"></i> Deadline:</strong> 
+                                    {{ $deadline->locale('id')->format('d F Y') }}
+                                    
+                                    @if($isFixed)
+                                        <span class="badge bg-success ms-2">
+                                            <i class="bi bi-check-circle-fill"></i> Selesai Tepat Waktu
+                                        </span>
+                                    @else
+                                        @if($daysLeft > 0)
+                                            <span class="badge bg-success ms-2">{{ $daysLeft }} hari tersisa</span>
+                                        @elseif($daysLeft == 0)
+                                            <span class="badge bg-warning text-dark ms-2">Deadline hari ini!</span>
+                                        @else
+                                            <span class="badge bg-danger ms-2">Terlambat {{ abs($daysLeft) }} hari</span>
+                                        @endif
+                                    @endif
+                                </div>
+                            </div>
+                            <!-- Keterangan Deadline -->
+                            @if($report->deadline_reason)
+                                <div class="mt-2 pt-2 border-top border-opacity-25">
+                                    <small><i class="bi bi-chat-left-text"></i> <strong>Keterangan:</strong> {{ $report->deadline_reason }}</small>
+                                </div>
                             @endif
                         </div>
                     @endif
@@ -259,13 +269,17 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Foto (Setelah Perbaikan) *</label>
-                        <input type="file" name="photos[]" id="responsePhotos" class="form-control" accept="image/*" multiple required>
-                        <small class="text-muted d-block mt-1">Unggah foto yang menunjukkan kondisi setelah diperbaiki</small>
-                        
-                        <!-- Tombol Kamera untuk Response -->
-                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="openResponseCamera()">
-                            <i class="bi bi-camera-fill"></i> Buka Kamera
-                        </button>
+                        <!-- Button Kamera dan Galeri -->
+                        <div class="btn-group w-100 mb-2" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="openResponseCamera()">
+                                <i class="bi bi-camera-fill"></i> Buka Kamera
+                            </button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('responsePhotos').click()">
+                                <i class="bi bi-folder2-open"></i> Pilih dari Galeri
+                            </button>
+                        </div>
+                        <input type="file" name="photos[]" id="responsePhotos" class="form-control d-none" accept="image/*" multiple required>
+                        <small class="text-muted d-block">Unggah foto yang menunjukkan kondisi setelah diperbaiki</small>
                         
                         <div id="responsePhotoList" class="mt-3"></div>
                     </div>
@@ -293,6 +307,7 @@
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i> Setelah memulai perbaikan, Anda dapat mengirim respons dengan foto bukti perbaikan.
                     </div>
+                    <!-- Tanggal Deadline -->
                     <div class="mb-3">
                         <label for="deadline" class="form-label">Tanggal Deadline <span class="text-danger">*</span></label>
                         <input type="date" 
@@ -306,6 +321,21 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                         <small class="text-muted">Pilih tanggal kapan masalah ini harus diselesaikan.</small>
+                    </div>
+                    <!-- Keterangan Deadline -->
+                    <div class="mb-3">
+                        <label for="deadline_reason" class="form-label">Keterangan Deadline <span class="text-danger">*</span></label>
+                        <textarea class="form-control @error('deadline_reason') is-invalid @enderror"
+                                  id="deadline_reason"
+                                  name="deadline_reason"
+                                  rows="3"
+                                  required
+                                  placeholder="Contoh: Menunggu pengiriman suku cadang dari vendor, estimasi tiba hari X..."
+                                  >{{ old('deadline_reason') }}</textarea>
+                        @error('deadline_reason')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted">Jelaskan alasan dan rencana untuk menyelesaikan perbaikan ini.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -370,8 +400,28 @@ function openImageModal(imageSrc) {
 // Open camera for response photos
 function openResponseCamera() {
     const input = document.getElementById('responsePhotos');
-    input.setAttribute('capture', 'environment');
-    input.click();
+    const cameraInput = document.createElement('input');
+    cameraInput.type = 'file';
+    cameraInput.accept = 'image/*';
+    cameraInput.capture = 'environment';
+    cameraInput.multiple = true;
+
+    cameraInput.onchange = function(e) {
+        const dataTransfer = new DataTransfer();
+        const existingFiles = Array.from(input.files);
+        const newFiles = Array.from(e.target.files);
+
+        [...existingFiles, ...newFiles].forEach(file => {
+            dataTransfer.items.add(file);
+        });
+
+        input.files = dataTransfer.files;
+
+        const event = new Event('change', { bubbles: true });
+        input.dispatchEvent(event);
+    };
+
+    cameraInput.click();
 }
 
 // Response photo preview
@@ -383,7 +433,7 @@ document.getElementById('responsePhotos')?.addEventListener('change', function(e
     
     if (files.length === 0) return;
     
-    files.forEach((file) => {
+    files.forEach((file, index) => {
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             
@@ -404,9 +454,19 @@ document.getElementById('responsePhotos')?.addEventListener('change', function(e
                     <div class="fw-bold small">${file.name}</div>
                     <div class="text-muted" style="font-size: 0.75rem;">${(file.size / 1024).toFixed(1)} KB</div>
                 `;
+
+                // Tombol hapus foto
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'btn btn-danger btn-sm';
+                deleteBtn.innerHTML = '<i class="bi bi-x"></i>';
+                deleteBtn.onclick = function() {
+                    removeResponsePhoto(index);
+                };
                 
                 fileItem.appendChild(img);
                 fileItem.appendChild(fileInfo);
+                fileItem.appendChild(deleteBtn);
                 photoList.appendChild(fileItem);
             };
             
@@ -414,5 +474,23 @@ document.getElementById('responsePhotos')?.addEventListener('change', function(e
         }
     });
 });
+
+// Hapus foto dari response
+function removeResponsePhoto(index) {
+    const input = document.getElementById('responsePhotos');
+    const dataTransfer = new DataTransfer();
+    const files = Array.from(input.files);
+
+    files.forEach((file, i) => {
+        if (i !== index) {
+            dataTransfer.items.add(file);
+        }
+    });
+
+    input.files = dataTransfer.files;
+
+    const event = new Event('change', { bubbles: true });
+    input.dispatchEvent(event);
+}
 </script>
 @endpush

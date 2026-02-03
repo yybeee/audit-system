@@ -16,6 +16,38 @@
                     <form action="{{ route('reports.store') }}" method="POST" enctype="multipart/form-data" id="reportForm">
                         @csrf
 
+                        <!-- Foto (dipindah ke atas) -->
+                        <div class="mb-3">
+                            <label for="photos" class="form-label">
+                                <i class="bi bi-camera"></i> Foto *
+                            </label>
+                            
+                            <!-- Button untuk memilih metode upload -->
+                            <div class="btn-group w-100 mb-2" role="group">
+                                <button type="button" class="btn btn-outline-primary" onclick="openCamera()">
+                                    <i class="bi bi-camera-fill"></i> Buka Kamera
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('photos').click()">
+                                    <i class="bi bi-folder2-open"></i> Pilih dari Galeri
+                                </button>
+                            </div>
+                            
+                            <input type="file" name="photos[]" id="photos" 
+                                   class="form-control @error('photos.*') is-invalid @enderror d-none" 
+                                   accept="image/*" 
+                                   multiple required>
+                            <small class="text-muted">Anda bisa memilih beberapa foto. Maksimal 5MB per foto.</small>
+                            @error('photos')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                            @error('photos.*')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                            
+                            <!-- Preview Foto -->
+                            <div id="photoPreview" class="row g-2 mt-2"></div>
+                        </div>
+
                         <!-- Lokasi -->
                         <div class="mb-3">
                             <label for="location" class="form-label">
@@ -73,38 +105,6 @@
                             @error('department_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div>
-
-                        <!-- Foto -->
-                        <div class="mb-3">
-                            <label for="photos" class="form-label">
-                                <i class="bi bi-camera"></i> Foto *
-                            </label>
-                            
-                            <!-- Button untuk memilih metode upload -->
-                            <div class="btn-group w-100 mb-2" role="group">
-                                <button type="button" class="btn btn-outline-primary" onclick="openCamera()">
-                                    <i class="bi bi-camera-fill"></i> Buka Kamera
-                                </button>
-                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('photos').click()">
-                                    <i class="bi bi-folder2-open"></i> Pilih dari Galeri
-                                </button>
-                            </div>
-                            
-                            <input type="file" name="photos[]" id="photos" 
-                                   class="form-control @error('photos.*') is-invalid @enderror d-none" 
-                                   accept="image/*" 
-                                   multiple required>
-                            <small class="text-muted">Anda bisa memilih beberapa foto. Maksimal 5MB per foto.</small>
-                            @error('photos')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                            @error('photos.*')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                            
-                            <!-- Preview Foto -->
-                            <div id="photoPreview" class="row g-2 mt-2"></div>
                         </div>
 
                         <!-- Tombol -->

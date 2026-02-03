@@ -145,6 +145,33 @@
             color: var(--primary);
             transform: translateX(5px);
         }
+
+        /* Profile Dropdown */
+        .profile-dropdown-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            margin: -0.5rem -0.5rem 0.25rem -0.5rem;
+            border-radius: 12px 12px 0 0;
+            background: var(--light);
+        }
+
+        .profile-avatar-lg {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .dropdown-item.text-danger:hover {
+            background: #FEF2F2;
+            color: var(--danger) !important;
+        }
         
         /* Cards */
         .card {
@@ -422,34 +449,56 @@
                             </li>
                         @endif
                         
+                        <!-- Profile Dropdown -->
                         <li class="nav-item dropdown ms-lg-2">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 p-1" href="#" role="button" data-bs-toggle="dropdown">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div style="width: 32px; height: 32px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary);">
+                                    <div style="width: 36px; height: 36px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary); font-size: 0.95rem;">
                                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                                     </div>
-                                    <span class="d-none d-lg-inline">{{ auth()->user()->name }}</span>
+                                    <span class="d-none d-lg-inline fw-600">{{ auth()->user()->name }}</span>
+                                    <i class="bi bi-chevron-down d-none d-lg-inline" style="font-size: 0.75rem;"></i>
                                 </div>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li class="px-3 py-2 border-bottom">
-                                    <small class="text-muted d-block">Signed in as</small>
-                                    <strong>{{ auth()->user()->name }}</strong>
-                                    <br>
-                                    <span class="badge bg-primary mt-1">{{ auth()->user()->role_label }}</span>
+                            <ul class="dropdown-menu dropdown-menu-end" style="min-width: 220px;">
+                                <!-- Header Profil -->
+                                <li>
+                                    <div class="profile-dropdown-header d-flex align-items-center gap-3">
+                                        <div class="profile-avatar-lg">
+                                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold" style="font-size: 0.9rem;">{{ auth()->user()->name }}</div>
+                                            <div class="text-muted" style="font-size: 0.78rem;">{{ auth()->user()->email }}</div>
+                                            <span class="badge bg-primary mt-1" style="font-size: 0.7rem; padding: 0.25rem 0.6rem;">
+                                                @if(auth()->user()->role === 'super_admin') Super Admin
+                                                @elseif(auth()->user()->role === 'auditor') Auditor
+                                                @elseif(auth()->user()->role === 'staff_departemen') Staff Departemen
+                                                @endif
+                                            </span>
+                                        </div>
+                                    </div>
                                 </li>
-                                <li><a class="dropdown-item" href="#">
-                                    <i class="bi bi-person"></i> Profile
-                                </a></li>
-                                <li><a class="dropdown-item" href="#">
-                                    <i class="bi bi-gear"></i> Settings
-                                </a></li>
-                                <li><hr class="dropdown-divider"></li>
+                                <!-- Menu Items -->
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('profile.index') }}">
+                                        <i class="bi bi-person-circle" style="font-size: 1.1rem; color: var(--primary);"></i>
+                                        <span>Profil</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('profile.password') }}">
+                                        <i class="bi bi-shield-lock" style="font-size: 1.1rem; color: var(--primary);"></i>
+                                        <span>Ubah Password</span>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
                                 <li>
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf
-                                        <button type="submit" class="dropdown-item text-danger">
-                                            <i class="bi bi-box-arrow-right"></i> Logout
+                                        <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-danger">
+                                            <i class="bi bi-box-arrow-right" style="font-size: 1.1rem;"></i>
+                                            <span>Logout</span>
                                         </button>
                                     </form>
                                 </li>
@@ -516,6 +565,12 @@
                     <small class="d-block">Admin</small>
                 </a>
             @endif
+
+            <!-- Profile di mobile bottom menu -->
+            <a href="{{ route('profile.index') }}" class="{{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                <i class="bi bi-person-circle"></i>
+                <small class="d-block">Profil</small>
+            </a>
         </div>
     </div>
     @endauth

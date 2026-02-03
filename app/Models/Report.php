@@ -23,6 +23,7 @@ class Report extends Model
         'approved_by',
         'started_at',
         'deadline',
+        'deadline_reason',
     ];
 
     // Cast untuk convert otomatis JSON ke array dan string ke datetime

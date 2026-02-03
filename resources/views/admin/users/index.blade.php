@@ -56,7 +56,7 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editUser({{ json_encode($user) }})">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editUser({{ json_encode($user->only('id', 'name', 'username', 'email', 'role', 'department_id', 'audit_type_id', 'is_active')) }})">
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
                                                 @if($user->id !== auth()->id())
