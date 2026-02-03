@@ -125,6 +125,7 @@ class AdminController extends Controller
             'password' => 'required|string|min:6',
             'role' => 'required|in:super_admin,auditor,staff_departemen,supervisor',
             'department_id' => 'nullable|exists:departments,id',
+            'audit_type_id' => 'nullable|exists:audit_types,id',
         ]);
 
         User::create([
@@ -133,7 +134,8 @@ class AdminController extends Controller
             'username' => $request->username,
             'password' => Hash::make($request->password),
             'role' => $request->role,
-            'department_id' => $request->department_id,
+            'department_id' => $request->role === 'staff_departemen' ? $request->department_id : null,
+            'audit_type_id' => $request->role === 'auditor' ? $request->audit_type_id : null,
         ]);
 
         return redirect()->route('admin.users')->with('success', 'User created successfully');
@@ -151,6 +153,8 @@ class AdminController extends Controller
         ]);
 
         $data = $request->except('password');
+        $data['department_id'] = $request->role === 'staff_departemen' ? $request->department_id : null;
+        $data['audit_type_id'] = $request->role === 'auditor' ? $request->audit_type_id : null;
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
         }

@@ -25,6 +25,7 @@
                                         <th>Email</th>
                                         <th>Role</th>
                                         <th>Department</th>
+                                        <th>Audit Type</th>
                                         <th>Status</th>
                                         <th width="150">Actions</th>
                                     </tr>
@@ -46,6 +47,7 @@
                                                 @endif
                                             </td>
                                             <td>{{ $user->department->name ?? '-' }}</td>
+                                            <td>{{ $user->auditType->name ?? '-' }}</td>
                                             <td>
                                                 @if($user->is_active)
                                                     <span class="badge bg-success">Active</span>
@@ -114,19 +116,30 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Role *</label>
-                        <select name="role" id="role_add" class="form-select" required onchange="toggleDepartment('add')">
+                        <select name="role" id="role_add" class="form-select" required onchange="toggleFields('add')">
                             <option value="">Select Role</option>
                             <option value="super_admin">Super Admin</option>
                             <option value="auditor">Auditor</option>
                             <option value="staff_departemen">Staff Departemen</option>
                         </select>
                     </div>
+                    <!-- Department: muncul saat staff_departemen -->
                     <div class="mb-3" id="department_add_wrapper" style="display: none;">
                         <label class="form-label">Department *</label>
                         <select name="department_id" id="department_add" class="form-select">
                             <option value="">Select Department</option>
                             @foreach($departments as $dept)
                                 <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <!-- Audit Type: muncul saat auditor -->
+                    <div class="mb-3" id="audit_type_add_wrapper" style="display: none;">
+                        <label class="form-label">Audit Type *</label>
+                        <select name="audit_type_id" id="audit_type_add" class="form-select">
+                            <option value="">Select Audit Type</option>
+                            @foreach(\App\Models\AuditType::all() as $type)
+                                <option value="{{ $type->id }}">{{ $type->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -175,18 +188,29 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Role *</label>
-                        <select name="role" id="edit_role" class="form-select" required onchange="toggleDepartment('edit')">
+                        <select name="role" id="edit_role" class="form-select" required onchange="toggleFields('edit')">
                             <option value="super_admin">Super Admin</option>
                             <option value="auditor">Auditor</option>
                             <option value="staff_departemen">Staff Departemen</option>
                         </select>
                     </div>
-                    <div class="mb-3" id="department_edit_wrapper">
+                    <!-- Department: muncul saat staff_departemen -->
+                    <div class="mb-3" id="department_edit_wrapper" style="display: none;">
                         <label class="form-label">Department</label>
                         <select name="department_id" id="edit_department_id" class="form-select">
                             <option value="">Select Department</option>
                             @foreach($departments as $dept)
                                 <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <!-- Audit Type: muncul saat auditor -->
+                    <div class="mb-3" id="audit_type_edit_wrapper" style="display: none;">
+                        <label class="form-label">Audit Type</label>
+                        <select name="audit_type_id" id="audit_type_edit" class="form-select">
+                            <option value="">Select Audit Type</option>
+                            @foreach(\App\Models\AuditType::all() as $type)
+                                <option value="{{ $type->id }}">{{ $type->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -207,11 +231,14 @@
 
 @push('scripts')
 <script>
-function toggleDepartment(type) {
+function toggleFields(type) {
     const roleSelect = document.getElementById('role_' + type);
     const deptWrapper = document.getElementById('department_' + type + '_wrapper');
-    const deptSelect = document.getElementById('department_' + type);
-    
+    const deptSelect = document.getElementById(type === 'add' ? 'department_add' : 'edit_department_id');
+    const auditTypeWrapper = document.getElementById('audit_type_' + type + '_wrapper');
+    const auditTypeSelect = document.getElementById('audit_type_' + type);
+
+    // Department: muncul saat staff_departemen
     if (roleSelect.value === 'staff_departemen') {
         deptWrapper.style.display = 'block';
         deptSelect.required = true;
@@ -219,6 +246,16 @@ function toggleDepartment(type) {
         deptWrapper.style.display = 'none';
         deptSelect.required = false;
         deptSelect.value = '';
+    }
+
+    // Audit Type: muncul saat auditor
+    if (roleSelect.value === 'auditor') {
+        auditTypeWrapper.style.display = 'block';
+        auditTypeSelect.required = true;
+    } else {
+        auditTypeWrapper.style.display = 'none';
+        auditTypeSelect.required = false;
+        auditTypeSelect.value = '';
     }
 }
 
@@ -229,10 +266,11 @@ function editUser(user) {
     document.getElementById('edit_email').value = user.email;
     document.getElementById('edit_role').value = user.role;
     document.getElementById('edit_department_id').value = user.department_id || '';
+    document.getElementById('audit_type_edit').value = user.audit_type_id || '';
     document.getElementById('edit_is_active').checked = user.is_active;
-    
-    toggleDepartment('edit');
-    
+
+    toggleFields('edit');
+
     new bootstrap.Modal(document.getElementById('editUserModal')).show();
 }
 </script>

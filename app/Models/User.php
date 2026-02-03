@@ -17,6 +17,7 @@ class User extends Authenticatable
         'password',
         'role',
         'department_id',
+        'audit_type_id',
         'is_active'
     ];
 
