@@ -203,22 +203,22 @@ class ReportController extends Controller
         
         // Validasi input deadline
         $validated = request()->validate([
-        'deadline' => 'required|date|after:today',
-        'deadline_reason' => 'required|string|min:5'
-    ], [
-        'deadline.required' => 'Tanggal deadline harus diisi.',
-        'deadline.date' => 'Format tanggal tidak valid.',
-        'deadline.after' => 'Tanggal deadline harus setelah hari ini.',
-        'deadline_reason.required' => 'Keterangan deadline harus diisi.',
-        'deadline_reason.min' => 'Keterangan deadline minimal 5 karakter.'
-    ]);
+            'deadline' => 'required|date|after:today',
+            'deadline_reason' => 'required|string|min:5'
+        ], [
+            'deadline.required' => 'Tanggal deadline harus diisi.',
+            'deadline.date' => 'Format tanggal tidak valid.',
+            'deadline.after' => 'Tanggal deadline harus setelah hari ini.',
+            'deadline_reason.required' => 'Keterangan deadline harus diisi.',
+            'deadline_reason.min' => 'Keterangan deadline minimal 5 karakter.'
+        ]);
 
-    // Update status dan deadline
-    $report->status = 'in_progress';
-    $report->started_at = now();
-    $report->deadline = $validated['deadline'];
-    $report->deadline_reason = $validated['deadline_reason'];
-    $report->save();
+        // Update status dan deadline
+        $report->status = 'in_progress';
+        $report->started_at = now();
+        $report->deadline = $validated['deadline'];
+        $report->deadline_reason = $validated['deadline_reason'];
+        $report->save();
         
         return redirect()->route('reports.show', $id)
             ->with('success', 'Progress laporan telah dimulai. Deadline: ' . \Carbon\Carbon::parse($validated['deadline'])->locale('id')->format('d F Y'));
@@ -266,6 +266,7 @@ class ReportController extends Controller
         // Update status report menjadi 'fixed'
         $report->status = 'fixed';
         $report->fixed_at = now();
+        $report->rejection_reason = null; // Clear rejection reason when fixed
         $report->save();
         
         return redirect()->route('reports.show', $id)
@@ -279,17 +280,26 @@ class ReportController extends Controller
     {
         $report = Report::findOrFail($id);
         
+        // Validate status
+        if ($report->status !== 'fixed') {
+            return redirect()->route('reports.show', $id)
+                ->with('error', 'Only reports with status "Fixed" can be approved.');
+        }
+        
         // Update status
         $report->status = 'approved';
         $report->approved_at = now();
+        $report->approved_by = auth()->id();
+        $report->rejection_reason = null; // Clear rejection reason
         $report->save();
         
         return redirect()->route('reports.show', $id)
-            ->with('success', 'Laporan telah disetujui (Approved).');
+            ->with('success', 'Report has been approved successfully!');
     }
 
     /**
-     * Auditor reject report
+     * Auditor reject report - Professional rejection handling
+     * Status changes back to 'in_progress' for revision
      */
     public function reject(Request $request, $id)
     {
@@ -297,20 +307,22 @@ class ReportController extends Controller
         
         // Validasi
         $validated = $request->validate([
-            'rejection_reason' => 'required|string|min:10'
+            'rejection_reason' => 'required|string|min:10|max:500'
         ], [
             'rejection_reason.required' => 'Alasan penolakan harus diisi.',
-            'rejection_reason.min' => 'Alasan penolakan minimal 10 karakter.'
+            'rejection_reason.min' => 'Alasan penolakan minimal 10 karakter.',
+            'rejection_reason.max' => 'Alasan penolakan maksimal 500 karakter.'
         ]);
         
-        // Update status
+        // Update status to 'in_progress' (not 'rejected')
+        // Rejected means needs revision, so it goes back to in_progress
         $report->status = 'in_progress';
         $report->rejection_reason = $validated['rejection_reason'];
         $report->approved_at = null;
-        $report->fixed_at = null;
+        $report->fixed_at = null; // Reset fixed_at because it needs to be fixed again
         $report->save();
         
         return redirect()->route('reports.show', $id)
-            ->with('warning', 'Laporan ditolak dan dikembalikan ke status In Progress untuk revisi.');
+            ->with('warning', 'Report rejected and sent back to In Progress for revision. The department has been notified.');
     }
 }

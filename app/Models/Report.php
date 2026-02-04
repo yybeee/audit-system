@@ -66,14 +66,20 @@ class Report extends Model
     public function getStatusBadgeAttribute()
     {
         $badges = [
-            'submitted' => '<span class="badge bg-primary">Submitted</span>',
-            'in_progress' => '<span class="badge bg-warning">In Progress</span>',
-            'fixed' => '<span class="badge bg-info">Fixed</span>',
-            'approved' => '<span class="badge bg-success">Approved</span>',
-            'rejected' => '<span class="badge bg-danger">Rejected</span>',
+            'submitted' => '<span class="badge bg-primary"><i class="bi bi-send"></i> Submitted</span>',
+            'in_progress' => '<span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> In Progress</span>',
+            'fixed' => '<span class="badge bg-info"><i class="bi bi-check-circle"></i> Fixed</span>',
+            'approved' => '<span class="badge bg-success"><i class="bi bi-patch-check"></i> Approved</span>',
         ];
 
-        return $badges[$this->status] ?? '<span class="badge bg-secondary">Unknown</span>';
+        $badge = $badges[$this->status] ?? '<span class="badge bg-secondary">Unknown</span>';
+        
+        // Add rejection indicator if report has rejection_reason
+        if ($this->rejection_reason && $this->status === 'in_progress') {
+            $badge .= ' <span class="badge bg-danger ms-1"><i class="bi bi-exclamation-octagon"></i> Needs Revision</span>';
+        }
+        
+        return $badge;
     }
 
     public function getStatusTextAttribute()
@@ -83,7 +89,6 @@ class Report extends Model
             'in_progress' => 'Dalam Proses',
             'fixed' => 'Selesai Diperbaiki',
             'approved' => 'Disetujui',
-            'rejected' => 'Ditolak',
         ];
 
         return $statuses[$this->status] ?? 'Unknown';
