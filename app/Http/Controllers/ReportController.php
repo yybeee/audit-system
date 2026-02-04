@@ -304,13 +304,13 @@ class ReportController extends Controller
         ]);
         
         // Update status
-        $report->status = 'rejected';
+        $report->status = 'in_progress';
         $report->rejection_reason = $validated['rejection_reason'];
         $report->approved_at = null;
         $report->fixed_at = null;
         $report->save();
         
         return redirect()->route('reports.show', $id)
-            ->with('success', 'Laporan telah ditolak dan dikembalikan ke departemen.');
+            ->with('warning', 'Laporan ditolak dan dikembalikan ke status In Progress untuk revisi.');
     }
 }

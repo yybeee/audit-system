@@ -7,60 +7,79 @@ use App\Models\Department;
 use App\Models\AuditType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         
-        // Statistics based on user role
-        $stats = $this->getStatsByRole($user);
+        // Get filter parameter
+        $departmentFilter = $request->get('department', 'all');
+        
+        // Get all departments for dropdown
+        $departments = Department::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        
+        // Statistics based on user role and filter
+        $stats = $this->getStatsByRole($user, $departmentFilter);
         
         // Recent reports
-        $recentReports = $this->getRecentReports($user);
+        $recentReports = $this->getRecentReports($user, $departmentFilter);
         
-        // Chart data
-        $chartData = $this->getChartData($user);
+        // Chart data for Pie Chart
+        $chartData = $this->getChartData($user, $departmentFilter);
         
-        return view('dashboard', compact('stats', 'recentReports', 'chartData'));
+        return view('dashboard', compact('stats', 'recentReports', 'chartData', 'departments', 'departmentFilter'));
     }
     
-    private function getStatsByRole($user)
+    private function getStatsByRole($user, $departmentFilter = 'all')
     {
         $stats = [];
         
         switch ($user->role) {
             case 'super_admin':
+                $query = Report::query();
+                
+                // Apply department filter
+                if ($departmentFilter !== 'all') {
+                    $query->where('department_id', $departmentFilter);
+                }
+                
                 $stats = [
-                    'total_reports' => Report::count(),
-                    'pending' => Report::whereIn('status', ['submitted', 'in_progress'])->count(),
-                    'completed' => Report::where('status', 'approved')->count(),
-                    'departments' => Department::where('is_active', true)->count(),
+                    'total_reports' => (clone $query)->count(),
+                    'pending' => (clone $query)->whereIn('status', ['submitted', 'in_progress'])->count(),
+                    'completed' => (clone $query)->where('status', 'fixed')->count(),
+                    'approved' => (clone $query)->where('status', 'approved')->count(),
                 ];
                 break;
                 
             case 'auditor':
+                $query = Report::where('auditor_id', $user->id);
+                
+                // Apply department filter
+                if ($departmentFilter !== 'all') {
+                    $query->where('department_id', $departmentFilter);
+                }
+                
                 $stats = [
-                    'my_reports' => Report::where('auditor_id', $user->id)->count(),
-                    'pending' => Report::where('auditor_id', $user->id)
-                        ->whereIn('status', ['submitted', 'in_progress'])->count(),
-                    'need_review' => Report::where('auditor_id', $user->id)
-                        ->where('status', 'fixed')->count(),
-                    'completed' => Report::where('auditor_id', $user->id)
-                        ->where('status', 'approved')->count(),
+                    'my_reports' => (clone $query)->count(),
+                    'pending' => (clone $query)->whereIn('status', ['submitted', 'in_progress'])->count(),
+                    'need_review' => (clone $query)->where('status', 'fixed')->count(),
+                    'approved' => (clone $query)->where('status', 'approved')->count(),
                 ];
                 break;
                 
             case 'staff_departemen':
+                $query = Report::where('department_id', $user->department_id);
+                
                 $stats = [
-                    'assigned' => Report::where('department_id', $user->department_id)->count(),
-                    'pending' => Report::where('department_id', $user->department_id)
-                        ->whereIn('status', ['submitted', 'in_progress'])->count(),
-                    'fixed' => Report::where('department_id', $user->department_id)
-                        ->where('status', 'fixed')->count(),
-                    'approved' => Report::where('department_id', $user->department_id)
-                        ->where('status', 'approved')->count(),
+                    'assigned' => (clone $query)->count(),
+                    'pending' => (clone $query)->whereIn('status', ['submitted', 'in_progress'])->count(),
+                    'fixed' => (clone $query)->where('status', 'fixed')->count(),
+                    'approved' => (clone $query)->where('status', 'approved')->count(),
                 ];
                 break;
         }
@@ -68,13 +87,21 @@ class DashboardController extends Controller
         return $stats;
     }
     
-    private function getRecentReports($user)
+    private function getRecentReports($user, $departmentFilter = 'all')
     {
         $query = Report::with(['auditType', 'department', 'auditor']);
         
         switch ($user->role) {
+            case 'super_admin':
+                if ($departmentFilter !== 'all') {
+                    $query->where('department_id', $departmentFilter);
+                }
+                break;
             case 'auditor':
                 $query->where('auditor_id', $user->id);
+                if ($departmentFilter !== 'all') {
+                    $query->where('department_id', $departmentFilter);
+                }
                 break;
             case 'staff_departemen':
                 $query->where('department_id', $user->department_id);
@@ -84,28 +111,56 @@ class DashboardController extends Controller
         return $query->latest()->take(5)->get();
     }
     
-    private function getChartData($user)
+    private function getChartData($user, $departmentFilter = 'all')
     {
-        // Status distribution
-        $statusData = Report::selectRaw('status, COUNT(*) as count')
+        // Base query based on role
+        $query = Report::query();
+        
+        switch ($user->role) {
+            case 'super_admin':
+                if ($departmentFilter !== 'all') {
+                    $query->where('department_id', $departmentFilter);
+                }
+                break;
+            case 'auditor':
+                $query->where('auditor_id', $user->id);
+                if ($departmentFilter !== 'all') {
+                    $query->where('department_id', $departmentFilter);
+                }
+                break;
+            case 'staff_departemen':
+                $query->where('department_id', $user->department_id);
+                break;
+        }
+        
+        // Status distribution for Pie Chart
+        $statusData = (clone $query)
+            ->select('status', DB::raw('COUNT(*) as count'))
             ->groupBy('status')
+            ->get()
             ->pluck('count', 'status')
             ->toArray();
-            
-        // Department distribution (for admin)
-        $departmentData = [];
-        if ($user->role === 'super_admin') {
-            $departmentData = Report::selectRaw('department_id, COUNT(*) as count')
-                ->groupBy('department_id')
-                ->with('department')
-                ->get()
-                ->pluck('count', 'department.name')
-                ->toArray();
+        
+        // Ensure all statuses are present (even if count is 0)
+        $allStatuses = [
+            'submitted' => $statusData['submitted'] ?? 0,
+            'in_progress' => $statusData['in_progress'] ?? 0,
+            'fixed' => $statusData['fixed'] ?? 0,
+            'approved' => $statusData['approved'] ?? 0,
+        ];
+        
+        // Calculate percentages
+        $total = array_sum($allStatuses);
+        $percentages = [];
+        foreach ($allStatuses as $status => $count) {
+            $percentages[$status] = $total > 0 ? round(($count / $total) * 100, 1) : 0;
         }
         
         return [
-            'status' => $statusData,
-            'departments' => $departmentData,
+            'labels' => ['Submitted', 'In Progress', 'Fixed', 'Approved'],
+            'data' => array_values($allStatuses),
+            'percentages' => array_values($percentages),
+            'colors' => ['#3498db', '#f39c12', '#27ae60', '#9b59b6'], // Blue, Yellow, Green, Purple
         ];
     }
 }

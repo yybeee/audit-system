@@ -4,158 +4,307 @@
 
 @section('content')
 <div class="container-fluid">
-    <!-- Welcome Header -->
+    {{-- Header --}}
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card border-0 overflow-hidden" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); position: relative;">
-                <div class="card-body p-4" style="position: relative; z-index: 2;">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <div class="d-flex align-items-center gap-3 mb-2">
-                                <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border-radius: 16px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.3);">
-                                    <i class="bi bi-speedometer2 text-white" style="font-size: 1.75rem;"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-white mb-1 fw-bold" style="font-size: 1.75rem; text-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                                        Dashboard Overview
-                                    </h3>
-                                    <p class="text-white mb-0" style="opacity: 0.95; font-size: 1rem;">
-                                        Welcome back, <strong>{{ auth()->user()->name }}</strong>
-                                    </p>
-                                </div>
-                            </div>
+            <div class="card border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-1">
+                                <i class="bi bi-speedometer2"></i> 
+                                @if(Auth::user()->role === 'super_admin')
+                                    Admin Dashboard
+                                @elseif(Auth::user()->role === 'auditor')
+                                    Auditor Dashboard
+                                @else
+                                    Department Dashboard
+                                @endif
+                            </h3>
+                            <p class="mb-0 opacity-75">Welcome back, {{ Auth::user()->name }}!</p>
                         </div>
-                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                            <div class="d-inline-block px-4 py-2" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border-radius: 12px; border: 2px solid rgba(255,255,255,0.3);">
-                                <div class="text-white">
-                                    <i class="bi bi-person-badge-fill"></i> 
-                                    <strong style="font-size: 1rem;">{{ auth()->user()->role_label }}</strong>
-                                </div>
-                            </div>
+                        
+                        {{-- Department Filter - Only for Admin & Auditor --}}
+                        @if(in_array(Auth::user()->role, ['super_admin', 'auditor']))
+                        <div>
+                            <form method="GET" action="{{ route('dashboard') }}" id="filterForm">
+                                <select name="department" class="form-select form-select-sm bg-white" onchange="this.form.submit()" style="min-width: 200px;">
+                                    <option value="all" {{ $departmentFilter === 'all' ? 'selected' : '' }}>
+                                        🌐 All Departments
+                                    </option>
+                                    @foreach($departments as $dept)
+                                        <option value="{{ $dept->id }}" {{ $departmentFilter == $dept->id ? 'selected' : '' }}>
+                                            {{ $dept->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </form>
                         </div>
+                        @endif
                     </div>
                 </div>
-                <!-- Decorative Elements -->
-                <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; z-index: 1;"></div>
-                <div style="position: absolute; bottom: -30px; left: -30px; width: 150px; height: 150px; background: rgba(255,255,255,0.08); border-radius: 50%; z-index: 1;"></div>
             </div>
         </div>
     </div>
-    
-    <!-- Statistics Cards -->
+
+    {{-- Statistics Cards --}}
     <div class="row g-3 mb-4">
-        @foreach($stats as $label => $value)
+        @if(Auth::user()->role === 'super_admin')
             <div class="col-6 col-md-3">
-                <div class="card stat-card h-100">
+                <div class="card stat-card h-100 border-0 shadow-sm">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <p class="text-muted text-uppercase small mb-1">
-                                    {{ str_replace('_', ' ', $label) }}
-                                </p>
-                                <h2 class="mb-0 fw-bold">{{ $value }}</h2>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">Total Reports</p>
+                                <h2 class="mb-0 fw-bold text-primary">{{ $stats['total_reports'] }}</h2>
                             </div>
-                            <div class="bg-primary bg-opacity-10 p-3 rounded">
-                                @switch($label)
-                                    @case('total_reports')
-                                    @case('my_reports')
-                                    @case('assigned')
-                                        <i class="bi bi-file-earmark-text text-primary fs-4"></i>
-                                        @break
-                                    @case('pending')
-                                    @case('need_review')
-                                        <i class="bi bi-eye text-info fs-4"></i>
-                                        @break
-                                    @case('completed')
-                                    @case('fixed')
-                                    @case('approved')
-                                        <i class="bi bi-check-circle text-success fs-4"></i>
-                                        @break
-                                    @case('rejected')
-                                        <i class="bi bi-x-circle text-danger fs-4"></i>
-                                        @break
-                                    @case('departments')
-                                        <i class="bi bi-building text-info fs-4"></i>
-                                        @break
-                                    @default
-                                        <i class="bi bi-graph-up text-primary fs-4"></i>
-                                @endswitch
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-file-earmark-text text-primary fs-4"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        @endforeach
+
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">Pending</p>
+                                <h2 class="mb-0 fw-bold text-warning">{{ $stats['pending'] }}</h2>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-clock-history text-warning fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">Fixed</p>
+                                <h2 class="mb-0 fw-bold text-success">{{ $stats['completed'] }}</h2>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-check-circle text-success fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">Approved</p>
+                                <h2 class="mb-0 fw-bold" style="color: #9b59b6;">{{ $stats['approved'] }}</h2>
+                            </div>
+                            <div class="p-3 rounded-circle" style="background-color: rgba(155, 89, 182, 0.1);">
+                                <i class="bi bi-award fs-4" style="color: #9b59b6;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @elseif(Auth::user()->role === 'auditor')
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">My Reports</p>
+                                <h2 class="mb-0 fw-bold text-primary">{{ $stats['my_reports'] }}</h2>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-clipboard-data text-primary fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">Pending</p>
+                                <h2 class="mb-0 fw-bold text-warning">{{ $stats['pending'] }}</h2>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-hourglass-split text-warning fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">Need Review</p>
+                                <h2 class="mb-0 fw-bold text-info">{{ $stats['need_review'] }}</h2>
+                            </div>
+                            <div class="bg-info bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-eye-fill text-info fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">Approved</p>
+                                <h2 class="mb-0 fw-bold text-success">{{ $stats['approved'] }}</h2>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @else
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">Assigned</p>
+                                <h2 class="mb-0 fw-bold text-primary">{{ $stats['assigned'] }}</h2>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-inbox-fill text-primary fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">Pending</p>
+                                <h2 class="mb-0 fw-bold text-warning">{{ $stats['pending'] }}</h2>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-exclamation-triangle text-warning fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">Fixed</p>
+                                <h2 class="mb-0 fw-bold text-success">{{ $stats['fixed'] }}</h2>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-tools text-success fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted text-uppercase small mb-1 fw-semibold">Approved</p>
+                                <h2 class="mb-0 fw-bold" style="color: #9b59b6;">{{ $stats['approved'] }}</h2>
+                            </div>
+                            <div class="p-3 rounded-circle" style="background-color: rgba(155, 89, 182, 0.1);">
+                                <i class="bi bi-patch-check-fill fs-4" style="color: #9b59b6;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
-    
-    <!-- Quick Actions -->
-    @if(auth()->user()->role === 'auditor')
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-lightning-charge"></i> Quick Actions
+
+    {{-- Chart & Recent Reports --}}
+    <div class="row g-4">
+        {{-- Pie Chart --}}
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-pie-chart-fill text-primary"></i> Status Distribution
                     </h5>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <a href="{{ route('reports.create') }}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Create New Report
-                        </a>
-                        <a href="{{ route('reports.index') }}" class="btn btn-outline-primary">
-                            <i class="bi bi-list-ul"></i> View All Reports
-                        </a>
+                    <small class="text-muted">
+                        @if($departmentFilter === 'all')
+                            All Departments
+                        @else
+                            {{ $departments->firstWhere('id', $departmentFilter)->name ?? 'Unknown' }}
+                        @endif
+                    </small>
+                </div>
+                <div class="card-body">
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="statusPieChart"></canvas>
+                    </div>
+                    
+                    {{-- Legend --}}
+                    <div class="mt-4">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <div style="width: 16px; height: 16px; background-color: #3498db; border-radius: 3px;" class="me-2"></div>
+                                    <small class="text-muted">Submitted ({{ $chartData['percentages'][0] }}%)</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <div style="width: 16px; height: 16px; background-color: #f39c12; border-radius: 3px;" class="me-2"></div>
+                                    <small class="text-muted">In Progress ({{ $chartData['percentages'][1] }}%)</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <div style="width: 16px; height: 16px; background-color: #27ae60; border-radius: 3px;" class="me-2"></div>
+                                    <small class="text-muted">Fixed ({{ $chartData['percentages'][2] }}%)</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <div style="width: 16px; height: 16px; background-color: #9b59b6; border-radius: 3px;" class="me-2"></div>
+                                    <small class="text-muted">Approved ({{ $chartData['percentages'][3] }}%)</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    @endif
-    
-    @if(auth()->user()->role === 'staff_departemen')
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-lightning-charge"></i> Quick Actions
-                    </h5>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <a href="{{ route('reports.index') }}" class="btn btn-primary">
-                            <i class="bi bi-list-check"></i> View Assigned Reports
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-    
-    @if(auth()->user()->role === 'supervisor')
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-lightning-charge"></i> Quick Actions
-                    </h5>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <a href="{{ route('reports.index') }}" class="btn btn-primary">
-                            <i class="bi bi-clipboard-check"></i> Review Reports
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-    
-    <!-- Recent Reports -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-clock-history"></i> Recent Reports
+
+        {{-- Recent Reports --}}
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-clock-history text-primary"></i> Recent Reports
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -164,36 +313,27 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Report #</th>
-                                        <th>Audit Type</th>
-                                        <th>Department</th>
-                                        <th>Location</th>
-                                        <th>Status</th>
-                                        <th>Date</th>
-                                        <th>Action</th>
+                                        <th class="border-0">Report #</th>
+                                        <th class="border-0">Department</th>
+                                        <th class="border-0">Status</th>
+                                        <th class="border-0">Date</th>
+                                        <th class="border-0">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($recentReports as $report)
                                         <tr>
-                                            <td class="fw-bold">{{ $report->report_number }}</td>
+                                            <td class="fw-semibold">{{ $report->report_number }}</td>
                                             <td>
-                                                <span class="badge bg-info">
-                                                    {{ $report->auditType->name }}
-                                                </span>
+                                                <small class="text-muted">{{ $report->department->name }}</small>
                                             </td>
-                                            <td>{{ $report->department->name }}</td>
-                                            <td>{{ $report->location }}</td>
                                             <td>{!! $report->status_badge !!}</td>
                                             <td>
-                                                <small class="text-muted">
-                                                    {{ $report->created_at->format('d M Y') }}
-                                                </small>
+                                                <small class="text-muted">{{ $report->created_at->format('d M Y') }}</small>
                                             </td>
                                             <td>
-                                                <a href="{{ route('reports.show', $report) }}" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye"></i> View
+                                                <a href="{{ route('reports.show', $report) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
                                                 </a>
                                             </td>
                                         </tr>
@@ -203,8 +343,8 @@
                         </div>
                     @else
                         <div class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox fs-1"></i>
-                            <p class="mt-2">No reports yet</p>
+                            <i class="bi bi-inbox fs-1 opacity-50"></i>
+                            <p class="mt-2 mb-0">No reports available</p>
                         </div>
                     @endif
                 </div>
@@ -212,4 +352,84 @@
         </div>
     </div>
 </div>
+
+{{-- Chart.js Script --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pie Chart Configuration
+    const ctx = document.getElementById('statusPieChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: {!! json_encode($chartData['labels']) !!},
+            datasets: [{
+                data: {!! json_encode($chartData['data']) !!},
+                backgroundColor: {!! json_encode($chartData['colors']) !!},
+                borderWidth: 3,
+                borderColor: '#fff',
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false // We use custom legend
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            let value = context.parsed || 0;
+                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            let percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return label + ': ' + value + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                animateScale: true
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.stat-card {
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+}
+
+.form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(102, 126, 234, 0.05);
+}
+</style>
 @endsection
