@@ -171,24 +171,28 @@
 
             {{-- Photos --}}
             <div class="card border-0 shadow-sm mb-4">
+                @php
+                    $photos = is_array($report->photos) ? $report->photos : json_decode($report->photos, true) ?? [];
+                @endphp
+                
                 <div class="card-header bg-white border-0 py-3">
                     <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-images text-primary"></i> Evidence Photos ({{ count($report->photos ?? []) }})
+                        <i class="bi bi-images text-primary"></i> Evidence Photos ({{ count($photos) }})
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    @if($report->photos && count($report->photos) > 0)
+                    @if(count($photos) > 0)
                         <div class="row g-3">
-                            @foreach($report->photos as $photo)
+                            @foreach($photos as $photo)
                                 <div class="col-md-4">
                                     <a href="{{ Storage::url($photo) }}" data-lightbox="report-photos" data-title="Report Photo">
                                         <div class="ratio ratio-1x1">
                                             <img src="{{ Storage::url($photo) }}" 
-                                                 class="img-fluid rounded shadow-sm object-fit-cover" 
-                                                 alt="Report Photo"
-                                                 style="cursor: pointer; transition: transform 0.2s;"
-                                                 onmouseover="this.style.transform='scale(1.05)'"
-                                                 onmouseout="this.style.transform='scale(1)'">
+                                                class="img-fluid rounded shadow-sm object-fit-cover" 
+                                                alt="Report Photo"
+                                                style="cursor: pointer; transition: transform 0.2s;"
+                                                onmouseover="this.style.transform='scale(1.05)'"
+                                                onmouseout="this.style.transform='scale(1)'">
                                         </div>
                                     </a>
                                 </div>
