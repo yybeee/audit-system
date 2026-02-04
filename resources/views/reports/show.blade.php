@@ -172,27 +172,26 @@
             {{-- Photos --}}
             <div class="card border-0 shadow-sm mb-4">
                 @php
-                    $photos = is_array($report->photos) ? $report->photos : json_decode($report->photos, true) ?? [];
+                    $reportPhotos = is_array($report->photos) ? $report->photos : (json_decode($report->photos, true) ?? []);
                 @endphp
-                
                 <div class="card-header bg-white border-0 py-3">
                     <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-images text-primary"></i> Evidence Photos ({{ count($photos) }})
+                        <i class="bi bi-images text-primary"></i> Evidence Photos ({{ count($reportPhotos) }})
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    @if(count($photos) > 0)
+                    @if(count($reportPhotos) > 0)
                         <div class="row g-3">
-                            @foreach($photos as $photo)
+                            @foreach($reportPhotos as $photo)
                                 <div class="col-md-4">
                                     <a href="{{ Storage::url($photo) }}" data-lightbox="report-photos" data-title="Report Photo">
                                         <div class="ratio ratio-1x1">
                                             <img src="{{ Storage::url($photo) }}" 
-                                                class="img-fluid rounded shadow-sm object-fit-cover" 
-                                                alt="Report Photo"
-                                                style="cursor: pointer; transition: transform 0.2s;"
-                                                onmouseover="this.style.transform='scale(1.05)'"
-                                                onmouseout="this.style.transform='scale(1)'">
+                                                 class="img-fluid rounded shadow-sm object-fit-cover" 
+                                                 alt="Report Photo"
+                                                 style="cursor: pointer; transition: transform 0.2s;"
+                                                 onmouseover="this.style.transform='scale(1.05)'"
+                                                 onmouseout="this.style.transform='scale(1)'">
                                         </div>
                                     </a>
                                 </div>
@@ -223,9 +222,13 @@
                                 </div>
                                 <p class="mb-2" style="white-space: pre-line;">{{ $response->description }}</p>
                                 
-                                @if($response->photos && count($response->photos) > 0)
+                                @php
+                                    $responsePhotos = is_array($response->photos) ? $response->photos : (json_decode($response->photos, true) ?? []);
+                                @endphp
+                                
+                                @if(count($responsePhotos) > 0)
                                     <div class="row g-2 mt-3">
-                                        @foreach($response->photos as $photo)
+                                        @foreach($responsePhotos as $photo)
                                             <div class="col-md-3">
                                                 <a href="{{ Storage::url($photo) }}" data-lightbox="response-photos" data-title="Response Photo">
                                                     <div class="ratio ratio-1x1">
