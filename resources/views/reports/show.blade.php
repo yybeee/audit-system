@@ -1,243 +1,169 @@
 @extends('layouts.app')
 
-@section('title', 'Report Details')
+@section('title', 'Detail Laporan')
 
 @section('content')
 <div class="container-fluid">
-    {{-- Breadcrumb --}}
-    <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('reports.index') }}">Reports</a></li>
-            <li class="breadcrumb-item active">{{ $report->report_number }}</li>
-        </ol>
-    </nav>
-
-    {{-- Header --}}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-                        <div>
-                            <h3 class="mb-2">
-                                <i class="bi bi-file-earmark-text text-primary"></i>
-                                {{ $report->report_number }}
-                            </h3>
-                            <div class="mb-2">
-                                {!! $report->status_badge !!}
-                            </div>
-                            <p class="text-muted mb-0">
-                                <i class="bi bi-calendar3"></i>
-                                Created: {{ $report->created_at->format('d M Y, H:i') }}
-                            </p>
-                        </div>
-                        <div class="d-flex gap-2">
-                            @if(Auth::user()->role === 'auditor' && Auth::user()->id === $report->auditor_id)
-                                <a href="{{ route('reports.edit', $report) }}" class="btn btn-outline-primary">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </a>
-                            @endif
-                            <a href="{{ route('reports.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Back to List
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Rejection Alert --}}
-    @if($report->rejection_reason)
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="alert alert-danger border-0 shadow-sm" role="alert">
-                    <div class="d-flex align-items-start">
-                        <div class="flex-shrink-0 me-3">
-                            <div class="bg-danger bg-opacity-10 p-3 rounded-circle">
-                                <i class="bi bi-exclamation-triangle-fill text-danger fs-3"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1">
-                            <h5 class="alert-heading fw-bold mb-2">
-                                <i class="bi bi-x-octagon"></i> Report Rejected - Revision Required
-                            </h5>
-                            <p class="mb-2">
-                                This report has been reviewed and requires corrections before it can be approved.
-                                The status has been changed back to <strong>In Progress</strong>.
-                            </p>
-                            <hr class="my-3">
-                            <div class="bg-white bg-opacity-50 p-3 rounded">
-                                <p class="mb-1 fw-semibold text-dark">
-                                    <i class="bi bi-chat-left-quote"></i> Rejection Reason:
-                                </p>
-                                <p class="mb-0 fst-italic text-dark">
-                                    "{{ $report->rejection_reason }}"
-                                </p>
-                            </div>
-                            <div class="mt-3">
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle-fill"></i>
-                                    <strong>Action Required:</strong> Please review the feedback above, make necessary corrections, and resubmit the report for review.
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    {{-- Success/Warning Messages --}}
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-
-    @if(session('warning'))
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            {{ session('warning') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-
-    {{-- Main Content --}}
-    <div class="row g-4">
-        {{-- Report Details --}}
+    <div class="row">
         <div class="col-lg-8">
-            {{-- Basic Information --}}
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-info-circle text-primary"></i> Report Information
+            <!-- Report Detail Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-text"></i> Detail Laporan
                     </h5>
+                    {!! $report->status_badge !!}
                 </div>
-                <div class="card-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="text-muted small fw-semibold mb-1">Department</label>
-                            <p class="mb-0">
-                                <i class="bi bi-building text-primary"></i>
-                                {{ $report->department->name }}
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="text-muted small fw-semibold mb-1">Audit Type</label>
-                            <p class="mb-0">
-                                <i class="bi bi-clipboard-check text-info"></i>
-                                {{ $report->auditType->name }}
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="text-muted small fw-semibold mb-1">Auditor</label>
-                            <p class="mb-0">
-                                <i class="bi bi-person-badge text-success"></i>
-                                {{ $report->auditor->name }}
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="text-muted small fw-semibold mb-1">Location</label>
-                            <p class="mb-0">
-                                <i class="bi bi-geo-alt text-danger"></i>
-                                {{ $report->location }}
-                            </p>
-                        </div>
-                        <div class="col-12">
-                            <label class="text-muted small fw-semibold mb-1">Issue Type</label>
-                            <p class="mb-0">
-                                <span class="badge bg-warning">{{ $report->issue_type }}</span>
-                            </p>
-                        </div>
+                
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-borderless mb-0">
+                            <tr>
+                                <th width="200" class="d-none d-md-table-cell">Nomor Laporan:</th>
+                                <th class="d-md-none small">No. Laporan:</th>
+                                <td class="fw-bold">{{ $report->report_number }}</td>
+                            </tr>
+                            <tr>
+                                <th class="d-none d-md-table-cell">Tipe Audit:</th>
+                                <th class="d-md-none small">Tipe:</th>
+                                <td>
+                                    <span class="badge bg-info" style="font-size: 0.75rem;">{{ $report->auditType->name }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="d-none d-md-table-cell">Departemen:</th>
+                                <th class="d-md-none small">Dept:</th>
+                                <td class="small">{{ $report->department->name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="d-none d-md-table-cell">Lokasi:</th>
+                                <th class="d-md-none small">Lok:</th>
+                                <td class="small">{{ $report->location }}</td>
+                            </tr>
+                            <tr>
+                                <th class="d-none d-md-table-cell">Jenis Masalah:</th>
+                                <th class="d-md-none small">Masalah:</th>
+                                <td class="small">{{ $report->issue_type }}</td>
+                            </tr>
+                            <tr>
+                                <th class="d-none d-md-table-cell">Deskripsi:</th>
+                                <th class="d-md-none small">Desk:</th>
+                                <td class="small">{{ $report->description }}</td>
+                            </tr>
+                            <tr>
+                                <th class="d-none d-md-table-cell">Dilaporkan Oleh:</th>
+                                <th class="d-md-none small">Oleh:</th>
+                                <td class="small">{{ $report->auditor->name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="d-none d-md-table-cell">Tanggal Laporan:</th>
+                                <th class="d-md-none small">Tanggal:</th>
+                                <td class="small">{{ $report->submitted_at ? $report->submitted_at->format('d M Y H:i') : '-' }}</td>
+                            </tr>
+                            @if($report->fixed_at)
+                                <tr>
+                                    <th class="d-none d-md-table-cell">Diperbaiki Pada:</th>
+                                    <th class="d-md-none small">Diperbaiki:</th>
+                                    <td class="small">{{ $report->fixed_at->format('d M Y H:i') }}</td>
+                                </tr>
+                            @endif
+                            @if($report->approved_at)
+                                <tr>
+                                    <th class="d-none d-md-table-cell">Disetujui Pada:</th>
+                                    <th class="d-md-none small">Disetujui:</th>
+                                    <td class="small">{{ $report->approved_at->format('d M Y H:i') }}</td>
+                                </tr>
+                            @endif
+                            @if($report->status === 'rejected' && $report->rejection_reason)
+                                <tr>
+                                    <th class="d-none d-md-table-cell">Alasan Penolakan:</th>
+                                    <th class="d-md-none small">Alasan:</th>
+                                    <td class="text-danger small">{{ $report->rejection_reason }}</td>
+                                </tr>
+                            @endif
+                        </table>
                     </div>
-                </div>
-            </div>
 
-            {{-- Description --}}
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-card-text text-primary"></i> Description
-                    </h5>
-                </div>
-                <div class="card-body p-4">
-                    <p class="mb-0 text-dark" style="white-space: pre-line; line-height: 1.8;">{{ $report->description }}</p>
-                </div>
-            </div>
-
-            {{-- Photos --}}
-            <div class="card border-0 shadow-sm mb-4">
-                @php
-                    $reportPhotos = is_array($report->photos) ? $report->photos : (json_decode($report->photos, true) ?? []);
-                @endphp
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-images text-primary"></i> Evidence Photos ({{ count($reportPhotos) }})
-                    </h5>
-                </div>
-                <div class="card-body p-4">
-                    @if(count($reportPhotos) > 0)
-                        <div class="row g-3">
-                            @foreach($reportPhotos as $photo)
-                                <div class="col-md-4">
-                                    <a href="{{ Storage::url($photo) }}" data-lightbox="report-photos" data-title="Report Photo">
-                                        <div class="ratio ratio-1x1">
-                                            <img src="{{ Storage::url($photo) }}" 
-                                                 class="img-fluid rounded shadow-sm object-fit-cover" 
-                                                 alt="Report Photo"
-                                                 style="cursor: pointer; transition: transform 0.2s;"
-                                                 onmouseover="this.style.transform='scale(1.05)'"
-                                                 onmouseout="this.style.transform='scale(1)'">
-                                        </div>
-                                    </a>
+                    <!-- Photos from Auditor -->
+                    @php
+                        $photos = is_array($report->photos) ? $report->photos : (is_string($report->photos) ? json_decode($report->photos, true) : []);
+                    @endphp
+                    @if($photos && count($photos) > 0)
+                        <h6 class="mt-4 mb-3"><i class="bi bi-camera"></i> Foto Masalah:</h6>
+                        <div class="row g-2">
+                            @foreach($photos as $photo)
+                                <div class="col-6 col-md-4">
+                                    <img src="{{ Storage::url($photo) }}" class="img-fluid rounded" alt="Foto Masalah" style="cursor: pointer;" onclick="openImageModal('{{ Storage::url($photo) }}')">
                                 </div>
                             @endforeach
                         </div>
-                    @else
-                        <p class="text-muted mb-0">No photos available</p>
+                    @endif
+
+                    <!-- Alert Deadline -->
+                    @if($report->deadline)
+                        @php
+                            $deadline = \Carbon\Carbon::parse($report->deadline);
+                            $today = \Carbon\Carbon::today();
+                            $daysLeft = $today->diffInDays($deadline, false);
+                            $isFixed = in_array($report->status, ['fixed', 'approved']);
+                        @endphp
+                        
+                        <div class="alert {{ $isFixed ? 'alert-success' : ($daysLeft < 0 ? 'alert-danger' : 'alert-info') }} mt-4">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div>
+                                    <strong><i class="bi bi-calendar-event"></i> Deadline:</strong> 
+                                    {{ $deadline->locale('id')->format('d F Y') }}
+                                    
+                                    @if($isFixed)
+                                        <span class="badge bg-success ms-2">
+                                            <i class="bi bi-check-circle-fill"></i> Selesai Tepat Waktu
+                                        </span>
+                                    @else
+                                        @if($daysLeft > 0)
+                                            <span class="badge bg-success ms-2">{{ $daysLeft }} hari tersisa</span>
+                                        @elseif($daysLeft == 0)
+                                            <span class="badge bg-warning text-dark ms-2">Deadline hari ini!</span>
+                                        @else
+                                            <span class="badge bg-danger ms-2">Terlambat {{ abs($daysLeft) }} hari</span>
+                                        @endif
+                                    @endif
+                                </div>
+                            </div>
+                            <!-- Keterangan Deadline -->
+                            @if($report->deadline_reason)
+                                <div class="mt-2 pt-2 border-top border-opacity-25">
+                                    <small><i class="bi bi-chat-left-text"></i> <strong>Keterangan:</strong> {{ $report->deadline_reason }}</small>
+                                </div>
+                            @endif
+                        </div>
                     @endif
                 </div>
             </div>
 
-            {{-- Responses --}}
-            @if($report->responses->count() > 0)
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-white border-0 py-3">
-                        <h5 class="mb-0 fw-bold">
-                            <i class="bi bi-chat-left-dots text-primary"></i> Department Responses ({{ $report->responses->count() }})
-                        </h5>
+            <!-- Response Section -->
+            @if($report->responses && $report->responses->count() > 0)
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Respons Departemen</h5>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="card-body">
                         @foreach($report->responses as $response)
-                            <div class="border-start border-primary border-4 bg-light p-3 rounded mb-3">
+                            <div class="mb-3 pb-3 border-bottom">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div>
-                                        <strong class="text-primary">{{ $response->user->name }}</strong>
-                                        <small class="text-muted d-block">{{ $response->created_at->format('d M Y, H:i') }}</small>
-                                    </div>
+                                    <h6 class="mb-0">{{ $response->user->name }}</h6>
+                                    <small class="text-muted">{{ $response->created_at->format('d M Y H:i') }}</small>
                                 </div>
-                                <p class="mb-2" style="white-space: pre-line;">{{ $response->description }}</p>
+                                <p class="mb-2">{{ $response->description }}</p>
                                 
                                 @php
-                                    $responsePhotos = is_array($response->photos) ? $response->photos : (json_decode($response->photos, true) ?? []);
+                                    $responsePhotos = is_array($response->photos) ? $response->photos : (is_string($response->photos) ? json_decode($response->photos, true) : []);
                                 @endphp
-                                
-                                @if(count($responsePhotos) > 0)
-                                    <div class="row g-2 mt-3">
+                                @if($responsePhotos && count($responsePhotos) > 0)
+                                    <h6 class="mb-2"><i class="bi bi-camera"></i> Foto Perbaikan:</h6>
+                                    <div class="row g-2">
                                         @foreach($responsePhotos as $photo)
-                                            <div class="col-md-3">
-                                                <a href="{{ Storage::url($photo) }}" data-lightbox="response-photos" data-title="Response Photo">
-                                                    <div class="ratio ratio-1x1">
-                                                        <img src="{{ Storage::url($photo) }}" 
-                                                             class="img-fluid rounded shadow-sm object-fit-cover" 
-                                                             alt="Response Photo"
-                                                             style="cursor: pointer;">
-                                                    </div>
-                                                </a>
+                                            <div class="col-6 col-md-4">
+                                                <img src="{{ Storage::url($photo) }}" class="img-fluid rounded" alt="Foto Perbaikan" style="cursor: pointer;" onclick="openImageModal('{{ Storage::url($photo) }}')">
                                             </div>
                                         @endforeach
                                     </div>
@@ -249,171 +175,322 @@
             @endif
         </div>
 
-        {{-- Sidebar --}}
+        <!-- Actions Sidebar -->
         <div class="col-lg-4">
-            {{-- Timeline --}}
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-clock-history text-primary"></i> Timeline
-                    </h5>
+            <div class="card sticky-top" style="top: 80px;">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Aksi</h6>
                 </div>
-                <div class="card-body p-4">
-                    <div class="timeline">
-                        {{-- Submitted --}}
-                        <div class="timeline-item mb-3">
-                            <div class="d-flex align-items-start">
-                                <div class="flex-shrink-0">
-                                    <div class="bg-primary bg-opacity-10 rounded-circle p-2">
-                                        <i class="bi bi-send text-primary"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <strong class="d-block">Submitted</strong>
-                                    <small class="text-muted">{{ $report->submitted_at->format('d M Y, H:i') }}</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- In Progress --}}
-                        @if($report->started_at)
-                            <div class="timeline-item mb-3">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0">
-                                        <div class="bg-warning bg-opacity-10 rounded-circle p-2">
-                                            <i class="bi bi-hourglass-split text-warning"></i>
-                                        </div>
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <strong class="d-block">Started Progress</strong>
-                                        <small class="text-muted">{{ $report->started_at->format('d M Y, H:i') }}</small>
-                                        @if($report->deadline)
-                                            <div class="mt-1">
-                                                <span class="badge bg-danger">
-                                                    Deadline: {{ $report->deadline->format('d M Y') }}
-                                                </span>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-
-                        {{-- Fixed --}}
-                        @if($report->fixed_at)
-                            <div class="timeline-item mb-3">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0">
-                                        <div class="bg-info bg-opacity-10 rounded-circle p-2">
-                                            <i class="bi bi-check-circle text-info"></i>
-                                        </div>
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <strong class="d-block">Fixed</strong>
-                                        <small class="text-muted">{{ $report->fixed_at->format('d M Y, H:i') }}</small>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-
-                        {{-- Approved --}}
-                        @if($report->approved_at)
-                            <div class="timeline-item">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0">
-                                        <div class="bg-success bg-opacity-10 rounded-circle p-2">
-                                            <i class="bi bi-patch-check text-success"></i>
-                                        </div>
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <strong class="d-block">Approved</strong>
-                                        <small class="text-muted">{{ $report->approved_at->format('d M Y, H:i') }}</small>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            {{-- Actions --}}
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-gear text-primary"></i> Actions
-                    </h5>
-                </div>
-                <div class="card-body p-4">
-                    {{-- Staff Department Actions --}}
-                    @if(Auth::user()->role === 'staff_departemen' && Auth::user()->department_id === $report->department_id)
+                <div class="card-body">
+                    @if(auth()->user()->role === 'staff_departemen' && auth()->user()->department_id === $report->department_id)
                         @if($report->status === 'submitted')
-                            {{-- Start Progress --}}
-                            <button class="btn btn-warning w-100 mb-2" data-bs-toggle="modal" data-bs-target="#startProgressModal">
-                                <i class="bi bi-play-circle"></i> Start Progress
+                            <!-- Tombol Start Progress - Hanya untuk status submitted -->
+                            <button type="button" class="btn btn-warning w-100 mb-2" data-bs-toggle="modal" data-bs-target="#startProgressModal">
+                                <i class="bi bi-play-circle"></i> Mulai Perbaikan
                             </button>
-                        @elseif($report->status === 'in_progress' && !$report->fixed_at)
-                            {{-- Submit Response --}}
-                            <button class="btn btn-info w-100 mb-2" data-bs-toggle="modal" data-bs-target="#respondModal">
-                                <i class="bi bi-chat-left-text"></i> Submit Response
+                            
+                            <!-- Peringatan untuk klik Start Progress dulu -->
+                            <div class="alert alert-warning py-2 small mb-2">
+                                <i class="bi bi-info-circle"></i> Klik "Mulai Perbaikan" terlebih dahulu untuk mengisi respons
+                            </div>
+                        @endif
+
+                        @if($report->status === 'in_progress')
+                            <!-- Tombol Submit Response - Hanya muncul setelah in_progress -->
+                            <button type="button" class="btn btn-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#responseModal">
+                                <i class="bi bi-check-circle"></i> Kirim Respons Perbaikan
                             </button>
+                        @endif
+
+                        @if($report->status === 'rejected')
+                            <!-- Untuk status rejected, bisa langsung kirim respons ulang -->
+                            <button type="button" class="btn btn-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#responseModal">
+                                <i class="bi bi-check-circle"></i> Kirim Respons Perbaikan
+                            </button>
+                            
+                            <div class="alert alert-danger py-2 small mb-2">
+                                <i class="bi bi-exclamation-triangle"></i> Laporan ditolak, perbaiki dan kirim respons baru
+                            </div>
                         @endif
                     @endif
 
-                    {{-- Auditor Actions --}}
-                    @if(Auth::user()->role === 'auditor' && Auth::user()->id === $report->auditor_id)
+                    @if(auth()->user()->role === 'auditor' && auth()->user()->id === $report->auditor_id)
                         @if($report->status === 'fixed')
-                            {{-- Approve --}}
                             <form action="{{ route('reports.approve', $report) }}" method="POST" class="mb-2">
                                 @csrf
-                                <button type="submit" class="btn btn-success w-100" onclick="return confirm('Are you sure you want to approve this report?')">
-                                    <i class="bi bi-check-circle"></i> Approve Report
+                                <button type="submit" class="btn btn-success w-100" onclick="return confirm('Setujui laporan ini?')">
+                                    <i class="bi bi-check-circle"></i> Setujui Laporan
                                 </button>
                             </form>
-                            {{-- Reject --}}
-                            <button class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal">
-                                <i class="bi bi-x-circle"></i> Reject Report
+
+                            <button type="button" class="btn btn-danger w-100 mb-2" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                <i class="bi bi-x-circle"></i> Tolak Laporan
                             </button>
+                        @endif
+
+                        @if(in_array($report->status, ['submitted', 'rejected']))
+                            <a href="{{ route('reports.edit', $report) }}" class="btn btn-outline-primary w-100 mb-2">
+                                <i class="bi bi-pencil"></i> Edit Laporan
+                            </a>
+
+                            <form action="{{ route('reports.destroy', $report) }}" method="POST" class="mb-2">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Hapus laporan ini? Tindakan ini tidak dapat dibatalkan.')">
+                                    <i class="bi bi-trash"></i> Hapus Laporan
+                                </button>
+                            </form>
                         @endif
                     @endif
 
-                    @if($report->status === 'approved')
-                        <div class="alert alert-success mb-0">
-                            <i class="bi bi-check-circle-fill"></i>
-                            <strong>Report Approved</strong>
-                        </div>
-                    @endif
+                    <a href="{{ route('reports.index') }}" class="btn btn-outline-secondary w-100 mt-2">
+                        <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Modals --}}
-@include('reports.modals.start-progress')
-@include('reports.modals.respond')
-@include('reports.modals.reject')
+<!-- Response Modal (for Staff Departemen) -->
+<div class="modal fade" id="responseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('reports.respond', $report) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Kirim Respons Perbaikan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Deskripsi Perbaikan *</label>
+                        <textarea name="description" class="form-control" rows="4" required placeholder="Jelaskan apa yang telah diperbaiki..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Foto (Setelah Perbaikan) *</label>
+                        <!-- Button Kamera dan Galeri -->
+                        <div class="btn-group w-100 mb-2" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="openResponseCamera()">
+                                <i class="bi bi-camera-fill"></i> Buka Kamera
+                            </button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('responsePhotos').click()">
+                                <i class="bi bi-folder2-open"></i> Pilih dari Galeri
+                            </button>
+                        </div>
+                        <input type="file" name="photos[]" id="responsePhotos" class="form-control d-none" accept="image/*" multiple required>
+                        <small class="text-muted d-block">Unggah foto yang menunjukkan kondisi setelah diperbaiki</small>
+                        
+                        <div id="responsePhotoList" class="mt-3"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Kirim Respons</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-{{-- Lightbox for images --}}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+<!-- Modal Start Progress -->
+<div class="modal fade" id="startProgressModal" tabindex="-1" aria-labelledby="startProgressModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('reports.start-progress', $report->id) }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="startProgressModalLabel">Mulai Perbaikan Audit</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Setelah memulai perbaikan, Anda dapat mengirim respons dengan foto bukti perbaikan.
+                    </div>
+                    <!-- Tanggal Deadline -->
+                    <div class="mb-3">
+                        <label for="deadline" class="form-label">Tanggal Deadline <span class="text-danger">*</span></label>
+                        <input type="date" 
+                               class="form-control @error('deadline') is-invalid @enderror" 
+                               id="deadline" 
+                               name="deadline" 
+                               min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                               value="{{ old('deadline') }}"
+                               required>
+                        @error('deadline')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted">Pilih tanggal kapan masalah ini harus diselesaikan.</small>
+                    </div>
+                    <!-- Keterangan Deadline -->
+                    <div class="mb-3">
+                        <label for="deadline_reason" class="form-label">Keterangan Deadline <span class="text-danger">*</span></label>
+                        <textarea class="form-control @error('deadline_reason') is-invalid @enderror"
+                                  id="deadline_reason"
+                                  name="deadline_reason"
+                                  rows="3"
+                                  required
+                                  placeholder="Contoh: Menunggu pengiriman suku cadang dari vendor, estimasi tiba hari X..."
+                                  >{{ old('deadline_reason') }}</textarea>
+                        @error('deadline_reason')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted">Jelaskan alasan dan rencana untuk menyelesaikan perbaikan ini.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-play-circle"></i> Mulai Perbaikan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-<style>
-.timeline-item {
-    position: relative;
-}
+<!-- Reject Modal (for Supervisor) -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('reports.reject', $report) }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">Tolak Laporan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> Laporan ini akan dikembalikan ke departemen untuk diperbaiki ulang.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Alasan Penolakan *</label>
+                        <textarea name="rejection_reason" class="form-control" rows="4" required placeholder="Jelaskan mengapa laporan ini ditolak..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger">Tolak Laporan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-.timeline-item:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    left: 15px;
-    top: 35px;
-    bottom: -15px;
-    width: 2px;
-    background: #e0e0e0;
-}
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body p-0">
+                <img src="" id="modalImage" class="img-fluid w-100" alt="Gambar Penuh">
+            </div>
+        </div>
+    </div>
+</div>
 
-.object-fit-cover {
-    object-fit: cover;
-}
-</style>
 @endsection
+
+@push('scripts')
+<script>
+function openImageModal(imageSrc) {
+    document.getElementById('modalImage').src = imageSrc;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+
+// Open camera for response photos
+function openResponseCamera() {
+    const input = document.getElementById('responsePhotos');
+    const cameraInput = document.createElement('input');
+    cameraInput.type = 'file';
+    cameraInput.accept = 'image/*';
+    cameraInput.capture = 'environment';
+    cameraInput.multiple = true;
+
+    cameraInput.onchange = function(e) {
+        const dataTransfer = new DataTransfer();
+        const existingFiles = Array.from(input.files);
+        const newFiles = Array.from(e.target.files);
+
+        [...existingFiles, ...newFiles].forEach(file => {
+            dataTransfer.items.add(file);
+        });
+
+        input.files = dataTransfer.files;
+
+        const event = new Event('change', { bubbles: true });
+        input.dispatchEvent(event);
+    };
+
+    cameraInput.click();
+}
+
+// Response photo preview
+document.getElementById('responsePhotos')?.addEventListener('change', function(e) {
+    const photoList = document.getElementById('responsePhotoList');
+    photoList.innerHTML = '';
+    
+    const files = Array.from(e.target.files);
+    
+    if (files.length === 0) return;
+    
+    files.forEach((file, index) => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'border rounded p-2 mb-2 d-flex align-items-center gap-2';
+                
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.width = '50px';
+                img.style.height = '50px';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '8px';
+                
+                const fileInfo = document.createElement('div');
+                fileInfo.className = 'flex-grow-1';
+                fileInfo.innerHTML = `
+                    <div class="fw-bold small">${file.name}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">${(file.size / 1024).toFixed(1)} KB</div>
+                `;
+
+                // Tombol hapus foto
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'btn btn-danger btn-sm';
+                deleteBtn.innerHTML = '<i class="bi bi-x"></i>';
+                deleteBtn.onclick = function() {
+                    removeResponsePhoto(index);
+                };
+                
+                fileItem.appendChild(img);
+                fileItem.appendChild(fileInfo);
+                fileItem.appendChild(deleteBtn);
+                photoList.appendChild(fileItem);
+            };
+            
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
+// Hapus foto dari response
+function removeResponsePhoto(index) {
+    const input = document.getElementById('responsePhotos');
+    const dataTransfer = new DataTransfer();
+    const files = Array.from(input.files);
+
+    files.forEach((file, i) => {
+        if (i !== index) {
+            dataTransfer.items.add(file);
+        }
+    });
+
+    input.files = dataTransfer.files;
+
+    const event = new Event('change', { bubbles: true });
+    input.dispatchEvent(event);
+}
+</script>
+@endpush
