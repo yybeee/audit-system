@@ -6,175 +6,170 @@
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bi bi-file-earmark-text"></i> 
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text"></i> 
+                            @if(auth()->user()->role === 'auditor')
+                                My Reports
+                            @elseif(auth()->user()->role === 'staff_departemen')
+                                Assigned Reports
+                            @elseif(auth()->user()->role === 'supervisor')
+                                Reports to Review
+                            @else
+                                All Reports
+                            @endif
+                        </h5>
+                        
                         @if(auth()->user()->role === 'auditor')
-                            Laporan Saya
-                        @elseif(auth()->user()->role === 'staff_departemen')
-                            Laporan yang Ditugaskan
-                        @elseif(auth()->user()->role === 'supervisor')
-                            Laporan untuk Direview
-                        @else
-                            Semua Laporan
+                            <a href="{{ route('reports.create') }}" class="btn btn-light btn-sm mt-2 mt-md-0">
+                                <i class="bi bi-plus-circle"></i> Create Report
+                            </a>
                         @endif
-                    </h5>
-                    
-                    @if(auth()->user()->role === 'auditor')
-                        <a href="{{ route('reports.create') }}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Buat Laporan
-                        </a>
-                    @endif
+                    </div>
                 </div>
                 
                 <div class="card-body">
                     <!-- Filter Section -->
                     <div class="mb-4">
-                        <form method="GET" action="{{ route('reports.index') }}" id="filterForm">
-                            <div class="row g-3">
-                                <!-- Search -->
-                                <div class="col-md-4">
-                                    <label class="form-label">Cari Laporan</label>
-                                    <div class="input-group">
-                                        <input type="text" name="search" class="form-control" 
-                                               placeholder="Nomor, lokasi, jenis masalah..." 
-                                               value="{{ request('search') }}">
-                                        <button class="btn btn-outline-secondary" type="submit">
-                                            <i class="bi bi-search"></i>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0"><i class="bi bi-funnel"></i> Filter Reports</h6>
+                            <button class="btn btn-sm btn-outline-secondary d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                                <i class="bi bi-funnel"></i> Toggle Filter
+                            </button>
+                        </div>
+                        
+                        <div class="collapse show" id="filterCollapse">
+                            <form method="GET" action="{{ route('reports.index') }}" id="filterForm">
+                                <div class="row g-3">
+                                    <!-- Search -->
+                                    <div class="col-12 col-md-6 col-lg-4">
+                                        <label class="form-label small fw-bold">Search Report</label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" name="search" class="form-control" 
+                                                   placeholder="Number, location, issue type..." 
+                                                   value="{{ request('search') }}">
+                                            <button class="btn btn-primary" type="submit">
+                                                <i class="bi bi-search"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Filter Status -->
+                                    <div class="col-6 col-md-4 col-lg-2">
+                                        <label class="form-label small fw-bold">Status</label>
+                                        <select name="status" class="form-select form-select-sm">
+                                            <option value="">All Status</option>
+                                            <option value="submitted" {{ request('status') === 'submitted' ? 'selected' : '' }}>Submitted</option>
+                                            <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                                            <option value="fixed" {{ request('status') === 'fixed' ? 'selected' : '' }}>Fixed</option>
+                                            <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
+                                            <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Filter Departemen -->
+                                    <div class="col-6 col-md-4 col-lg-3">
+                                        <label class="form-label small fw-bold">Department</label>
+                                        <select name="department" class="form-select form-select-sm">
+                                            <option value="">All Departments</option>
+                                            @foreach($departments as $dept)
+                                                <option value="{{ $dept->id }}" {{ request('department') == $dept->id ? 'selected' : '' }}>
+                                                    {{ $dept->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Filter Periode -->
+                                    <div class="col-6 col-md-4 col-lg-3">
+                                        <label class="form-label small fw-bold">Period</label>
+                                        <select name="period" class="form-select form-select-sm">
+                                            <option value="">All Time</option>
+                                            <option value="today" {{ request('period') === 'today' ? 'selected' : '' }}>Today</option>
+                                            <option value="week" {{ request('period') === 'week' ? 'selected' : '' }}>This Week</option>
+                                            <option value="month" {{ request('period') === 'month' ? 'selected' : '' }}>This Month</option>
+                                            <option value="year" {{ request('period') === 'year' ? 'selected' : '' }}>This Year</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Filter Tanggal Custom -->
+                                    <div class="col-6 col-md-4 col-lg-3">
+                                        <label class="form-label small fw-bold">From Date</label>
+                                        <input type="date" name="date_from" class="form-control form-control-sm" 
+                                               value="{{ request('date_from') }}">
+                                    </div>
+
+                                    <div class="col-6 col-md-4 col-lg-3">
+                                        <label class="form-label small fw-bold">To Date</label>
+                                        <input type="date" name="date_to" class="form-control form-control-sm" 
+                                               value="{{ request('date_to') }}">
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="col-12 col-md-4 col-lg-3 d-flex align-items-end gap-2">
+                                        <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                                            <i class="bi bi-filter"></i> Apply
                                         </button>
+                                        <a href="{{ route('reports.index') }}" class="btn btn-outline-secondary btn-sm">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </a>
                                     </div>
                                 </div>
-
-                                <!-- Filter Status -->
-                                <div class="col-md-3">
-                                    <label class="form-label">Status</label>
-                                    <select name="status" class="form-select" onchange="this.form.submit()">
-                                        <option value="all" {{ request('status', 'all') === 'all' ? 'selected' : '' }}>Semua Status</option>
-                                        <option value="submitted" {{ request('status') === 'submitted' ? 'selected' : '' }}>Terkirim</option>
-                                        <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>Dalam Proses</option>
-                                        <option value="fixed" {{ request('status') === 'fixed' ? 'selected' : '' }}>Selesai Diperbaiki</option>
-                                        <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Disetujui</option>
-                                        <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Ditolak</option>
-                                    </select>
-                                </div>
-
-                                <!-- Filter Departemen -->
-                                <div class="col-md-3">
-                                    <label class="form-label">Departemen</label>
-                                    <select name="department" class="form-select" onchange="this.form.submit()">
-                                        <option value="">Semua Departemen</option>
-                                        @foreach($departments as $dept)
-                                            <option value="{{ $dept->id }}" {{ request('department') == $dept->id ? 'selected' : '' }}>
-                                                {{ $dept->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <!-- Filter Periode Cepat -->
-                                <div class="col-md-2">
-                                    <label class="form-label">Periode</label>
-                                    <select name="period" class="form-select" onchange="this.form.submit()">
-                                        <option value="">Pilih Periode</option>
-                                        <option value="week" {{ request('period') === 'week' ? 'selected' : '' }}>Minggu Ini</option>
-                                        <option value="month" {{ request('period') === 'month' ? 'selected' : '' }}>Bulan Ini</option>
-                                        <option value="year" {{ request('period') === 'year' ? 'selected' : '' }}>Tahun Ini</option>
-                                    </select>
-                                </div>
-
-                                <!-- Filter Tanggal Custom -->
-                                <div class="col-md-3">
-                                    <label class="form-label">Dari Tanggal</label>
-                                    <input type="date" name="date_from" class="form-control" 
-                                           value="{{ request('date_from') }}" 
-                                           onchange="this.form.submit()">
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="form-label">Sampai Tanggal</label>
-                                    <input type="date" name="date_to" class="form-control" 
-                                           value="{{ request('date_to') }}" 
-                                           onchange="this.form.submit()">
-                                </div>
-
-                                <!-- Reset Filter Button -->
-                                <div class="col-md-6 d-flex align-items-end">
-                                    <a href="{{ route('reports.index') }}" class="btn btn-outline-secondary">
-                                        <i class="bi bi-arrow-clockwise"></i> Reset Filter
-                                    </a>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Quick Status Filter (Mobile Friendly) -->
-                    <div class="mb-3 d-md-none">
-                        <div class="btn-group btn-group-sm d-flex flex-wrap" role="group">
-                            <a href="?status=all" class="btn btn-outline-primary {{ request('status', 'all') === 'all' ? 'active' : '' }}">
-                                Semua
-                            </a>
-                            <a href="?status=submitted" class="btn btn-outline-primary {{ request('status') === 'submitted' ? 'active' : '' }}">
-                                Terkirim
-                            </a>
-                            <a href="?status=in_progress" class="btn btn-outline-warning {{ request('status') === 'in_progress' ? 'active' : '' }}">
-                                Proses
-                            </a>
-                            <a href="?status=fixed" class="btn btn-outline-info {{ request('status') === 'fixed' ? 'active' : '' }}">
-                                Selesai
-                            </a>
-                            <a href="?status=approved" class="btn btn-outline-success {{ request('status') === 'approved' ? 'active' : '' }}">
-                                Disetujui
-                            </a>
-                            <a href="?status=rejected" class="btn btn-outline-danger {{ request('status') === 'rejected' ? 'active' : '' }}">
-                                Ditolak
-                            </a>
+                            </form>
                         </div>
                     </div>
 
                     <!-- Info jumlah hasil -->
                     @if(request()->hasAny(['status', 'department', 'period', 'date_from', 'date_to', 'search']))
-                        <div class="alert alert-info">
+                        <div class="alert alert-info alert-dismissible fade show" role="alert">
                             <i class="bi bi-info-circle"></i> 
-                            Menampilkan {{ $reports->total() }} laporan dari hasil filter
+                            Showing <strong>{{ $reports->total() }}</strong> reports from filter results
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     @endif
 
                     @if($reports->count() > 0)
                         <!-- Desktop View -->
-                        <div class="table-responsive d-none d-md-block">
-                            <table class="table table-hover">
+                        <div class="table-responsive d-none d-lg-block">
+                            <table class="table table-hover align-middle">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Nomor Laporan</th>
-                                        <th>Tipe Audit</th>
-                                        <th>Departemen</th>
-                                        <th>Lokasi</th>
-                                        <th>Jenis Masalah</th>
-                                        <th>Status</th>
-                                        <th>Tanggal</th>
-                                        <th>Aksi</th>
+                                        <th class="fw-bold">Report Number</th>
+                                        <th class="fw-bold">Audit Type</th>
+                                        <th class="fw-bold">Department</th>
+                                        <th class="fw-bold">Location</th>
+                                        <th class="fw-bold">Issue Type</th>
+                                        <th class="fw-bold text-center">Status</th>
+                                        <th class="fw-bold">Date</th>
+                                        <th class="fw-bold text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($reports as $report)
                                         <tr>
-                                            <td class="fw-bold">{{ $report->report_number }}</td>
+                                            <td class="fw-bold text-primary">{{ $report->report_number }}</td>
                                             <td>
-                                                <span class="badge bg-info">{{ $report->auditType->name }}</span>
+                                                <span class="badge bg-info bg-opacity-10 text-info border border-info">
+                                                    {{ $report->auditType->name }}
+                                                </span>
                                             </td>
                                             <td>{{ $report->department->name }}</td>
-                                            <td>{{ $report->location }}</td>
-                                            <td>{{ $report->issue_type }}</td>
-                                            <td>{!! $report->status_badge !!}</td>
+                                            <td>
+                                                <i class="bi bi-geo-alt text-muted"></i> {{ Str::limit($report->location, 30) }}
+                                            </td>
+                                            <td>{{ Str::limit($report->issue_type, 25) }}</td>
+                                            <td class="text-center">{!! $report->status_badge !!}</td>
                                             <td>
                                                 <small class="text-muted">
-                                                    {{ $report->created_at->format('d M Y H:i') }}
+                                                    <i class="bi bi-calendar3"></i> {{ $report->created_at->format('d M Y') }}<br>
+                                                    <i class="bi bi-clock"></i> {{ $report->created_at->format('H:i') }}
                                                 </small>
                                             </td>
-                                            <td>
+                                            <td class="text-center">
                                                 <a href="{{ route('reports.show', $report) }}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye"></i> Lihat
+                                                    <i class="bi bi-eye"></i> View
                                                 </a>
                                             </td>
                                         </tr>
@@ -183,33 +178,81 @@
                             </table>
                         </div>
 
-                        <!-- Mobile View -->
-                        <div class="d-md-none">
+                        <!-- Tablet View -->
+                        <div class="d-none d-md-block d-lg-none">
                             @foreach($reports as $report)
-                                <div class="card mb-3">
+                                <div class="card mb-3 shadow-sm">
                                     <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h6 class="mb-0 fw-bold">{{ $report->report_number }}</h6>
-                                            {!! $report->status_badge !!}
+                                        <div class="row">
+                                            <div class="col-8">
+                                                <h6 class="fw-bold text-primary mb-2">{{ $report->report_number }}</h6>
+                                                <div class="mb-2">
+                                                    <span class="badge bg-info bg-opacity-10 text-info border border-info me-1">
+                                                        {{ $report->auditType->name }}
+                                                    </span>
+                                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">
+                                                        {{ $report->department->name }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="col-4 text-end">
+                                                {!! $report->status_badge !!}
+                                            </div>
                                         </div>
                                         
                                         <div class="mb-2">
-                                            <span class="badge bg-info">{{ $report->auditType->name }}</span>
-                                            <span class="badge bg-secondary">{{ $report->department->name }}</span>
+                                            <p class="mb-1">
+                                                <i class="bi bi-geo-alt text-primary"></i> 
+                                                <strong>{{ $report->location }}</strong>
+                                            </p>
+                                            <p class="mb-1 text-muted small">
+                                                <i class="bi bi-exclamation-triangle"></i> {{ $report->issue_type }}
+                                            </p>
+                                            <p class="mb-0 text-muted small">
+                                                <i class="bi bi-calendar3"></i> {{ $report->created_at->format('d M Y H:i') }}
+                                            </p>
                                         </div>
                                         
-                                        <p class="mb-1">
-                                            <i class="bi bi-geo-alt"></i> <strong>{{ $report->location }}</strong>
+                                        <a href="{{ route('reports.show', $report) }}" class="btn btn-sm btn-primary w-100">
+                                            <i class="bi bi-eye"></i> View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <!-- Mobile View -->
+                        <div class="d-md-none">
+                            @foreach($reports as $report)
+                                <div class="card mb-3 shadow-sm">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="mb-0 fw-bold text-primary small">{{ $report->report_number }}</h6>
+                                            <div>{!! $report->status_badge !!}</div>
+                                        </div>
+                                        
+                                        <div class="mb-2">
+                                            <span class="badge bg-info bg-opacity-10 text-info border border-info me-1" style="font-size: 0.7rem;">
+                                                {{ Str::limit($report->auditType->name, 15) }}
+                                            </span>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary" style="font-size: 0.7rem;">
+                                                {{ Str::limit($report->department->name, 15) }}
+                                            </span>
+                                        </div>
+                                        
+                                        <p class="mb-1 small">
+                                            <i class="bi bi-geo-alt text-primary"></i> 
+                                            <strong>{{ Str::limit($report->location, 35) }}</strong>
                                         </p>
-                                        <p class="mb-1 text-muted">
-                                            <i class="bi bi-exclamation-triangle"></i> {{ $report->issue_type }}
+                                        <p class="mb-1 text-muted small">
+                                            <i class="bi bi-exclamation-triangle"></i> {{ Str::limit($report->issue_type, 30) }}
                                         </p>
-                                        <p class="mb-2 text-muted small">
-                                            <i class="bi bi-calendar"></i> {{ $report->created_at->format('d M Y H:i') }}
+                                        <p class="mb-2 text-muted" style="font-size: 0.75rem;">
+                                            <i class="bi bi-calendar3"></i> {{ $report->created_at->format('d M Y H:i') }}
                                         </p>
                                         
                                         <a href="{{ route('reports.show', $report) }}" class="btn btn-sm btn-primary w-100">
-                                            <i class="bi bi-eye"></i> Lihat Detail
+                                            <i class="bi bi-eye"></i> View Details
                                         </a>
                                     </div>
                                 </div>
@@ -217,16 +260,24 @@
                         </div>
 
                         <!-- Pagination -->
-                        <div class="mt-3">
+                        <div class="mt-4 d-flex justify-content-center">
                             {{ $reports->appends(request()->query())->links() }}
                         </div>
                     @else
-                        <div class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                            <p>Tidak ada laporan ditemukan</p>
-                            @if(auth()->user()->role === 'auditor' && !request()->hasAny(['status', 'department', 'period', 'date_from', 'date_to', 'search']))
-                                <a href="{{ route('reports.create') }}" class="btn btn-primary mt-2">
-                                    <i class="bi bi-plus-circle"></i> Buat Laporan Pertama
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="bi bi-inbox display-1 text-muted"></i>
+                            </div>
+                            <h5 class="text-muted mb-3">No reports found</h5>
+                            @if(request()->hasAny(['status', 'department', 'period', 'date_from', 'date_to', 'search']))
+                                <p class="text-muted mb-3">Try changing your filter or search criteria</p>
+                                <a href="{{ route('reports.index') }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-arrow-clockwise"></i> Reset Filter
+                                </a>
+                            @elseif(auth()->user()->role === 'auditor')
+                                <p class="text-muted mb-3">You haven't created any reports yet</p>
+                                <a href="{{ route('reports.create') }}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Create First Report
                                 </a>
                             @endif
                         </div>
@@ -240,17 +291,52 @@
 
 @push('styles')
 <style>
-    .btn-group-sm .btn {
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #065F46 0%, #047857 100%);
+    }
+    
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+    
+    .card-header {
+        border-radius: 10px 10px 0 0 !important;
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+    
+    .table th {
+        border-bottom: 2px solid #dee2e6;
         font-size: 0.875rem;
-        padding: 0.25rem 0.5rem;
+    }
+    
+    .table td {
+        font-size: 0.875rem;
+        vertical-align: middle;
     }
     
     @media (max-width: 767.98px) {
-        .btn-group {
-            gap: 0.25rem;
+        .card-body {
+            padding: 1rem;
         }
-        .btn-group .btn {
-            flex: 1 1 auto;
+        
+        .form-label {
+            margin-bottom: 0.25rem;
+        }
+        
+        .badge {
+            font-size: 0.65rem !important;
+            padding: 0.25em 0.5em;
+        }
+    }
+    
+    @media (max-width: 991.98px) {
+        .table-responsive {
+            font-size: 0.85rem;
         }
     }
 </style>

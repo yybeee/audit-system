@@ -12,30 +12,79 @@ class ReportController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         
         // Query berdasarkan role
-        if ($user->role === 'super_admin') {
-            $reports = Report::with(['department', 'auditType', 'auditor'])
-                ->latest()
-                ->paginate(15);
-        } elseif ($user->role === 'staff_departemen') {
-            $reports = Report::with(['department', 'auditType', 'auditor'])
-                ->where('department_id', $user->department_id)
-                ->latest()
-                ->paginate(15);
-        } else { // auditor
-            $reports = Report::with(['department', 'auditType', 'auditor'])
-                ->where('auditor_id', $user->id)
-                ->latest()
-                ->paginate(15);
+        $query = Report::with(['department', 'auditType', 'auditor']);
+        
+        if ($user->role === 'staff_departemen') {
+            $query->where('department_id', $user->department_id);
+        } elseif ($user->role === 'auditor') {
+            $query->where('auditor_id', $user->id);
+        }
+        // super_admin melihat semua
+        
+        // Filter Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('report_number', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%")
+                  ->orWhere('issue_type', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
         }
         
+        // Filter Status - INI YANG DIPERBAIKI
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        // Filter Department
+        if ($request->filled('department')) {
+            $query->where('department_id', $request->department);
+        }
+        
+        // Filter Period
+        if ($request->filled('period')) {
+            $now = now();
+            switch ($request->period) {
+                case 'today':
+                    $query->whereDate('created_at', $now->toDateString());
+                    break;
+                case 'week':
+                    $query->whereBetween('created_at', [
+                        $now->copy()->startOfWeek(),
+                        $now->copy()->endOfWeek()
+                    ]);
+                    break;
+                case 'month':
+                    $query->whereMonth('created_at', $now->month)
+                          ->whereYear('created_at', $now->year);
+                    break;
+                case 'year':
+                    $query->whereYear('created_at', $now->year);
+                    break;
+            }
+        }
+        
+        // Filter Custom Date Range
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+        
+        // Order dan Pagination
+        $reports = $query->orderBy('created_at', 'desc')->paginate(15);
+        
         // Kirim data departments dan auditTypes untuk filter
-        $departments = \App\Models\Department::all();
-        $auditTypes = \App\Models\AuditType::all();
+        $departments = \App\Models\Department::orderBy('name')->get();
+        $auditTypes = \App\Models\AuditType::orderBy('name')->get();
         
         return view('reports.index', compact('reports', 'departments', 'auditTypes'));
     }
@@ -63,15 +112,15 @@ class ReportController extends Controller
             'photos' => 'required|array|min:1',
             'photos.*' => 'image|mimes:jpeg,png,jpg|max:5120'
         ], [
-            'department_id.required' => 'Departemen harus dipilih.',
-            'location.required' => 'Lokasi harus diisi.',
-            'issue_type.required' => 'Jenis masalah harus diisi.',
-            'description.required' => 'Deskripsi harus diisi.',
-            'photos.required' => 'Foto harus diupload.',
-            'photos.min' => 'Minimal upload 1 foto.',
-            'photos.*.image' => 'File harus berupa gambar.',
-            'photos.*.mimes' => 'Format gambar harus jpeg, png, atau jpg.',
-            'photos.*.max' => 'Ukuran gambar maksimal 5MB.'
+            'department_id.required' => 'Department must be selected.',
+            'location.required' => 'Location is required.',
+            'issue_type.required' => 'Issue type is required.',
+            'description.required' => 'Description is required.',
+            'photos.required' => 'Photos must be uploaded.',
+            'photos.min' => 'At least 1 photo is required.',
+            'photos.*.image' => 'File must be an image.',
+            'photos.*.mimes' => 'Image format must be jpeg, png, or jpg.',
+            'photos.*.max' => 'Maximum image size is 5MB.'
         ]);
 
         // Upload photos
@@ -107,7 +156,7 @@ class ReportController extends Controller
         ]);
 
         return redirect()->route('reports.index')
-            ->with('success', 'Laporan berhasil dibuat.');
+            ->with('success', 'Report created successfully.');
     }
 
     /**
@@ -128,8 +177,9 @@ class ReportController extends Controller
     {
         $report = Report::findOrFail($id);
         $departments = \App\Models\Department::all();
+        $auditTypes = \App\Models\AuditType::all();
         
-        return view('reports.edit', compact('report', 'departments'));
+        return view('reports.edit', compact('report', 'departments', 'auditTypes'));
     }
 
     /**
@@ -140,6 +190,7 @@ class ReportController extends Controller
         $report = Report::findOrFail($id);
         
         $validated = $request->validate([
+            'audit_type_id' => 'required|exists:audit_types,id',
             'department_id' => 'required|exists:departments,id',
             'location' => 'required|string|max:255',
             'issue_type' => 'required|string|max:255',
@@ -150,27 +201,24 @@ class ReportController extends Controller
 
         // Upload new photos if provided
         if ($request->hasFile('photos')) {
-            // Delete old photos
-            $oldPhotos = json_decode($report->photos, true);
-            if ($oldPhotos) {
-                foreach ($oldPhotos as $oldPhoto) {
-                    Storage::disk('public')->delete($oldPhoto);
-                }
-            }
+            // Keep old photos and add new ones
+            $oldPhotos = json_decode($report->photos, true) ?? [];
             
             // Upload new photos
-            $photoPaths = [];
+            $newPhotoPaths = [];
             foreach ($request->file('photos') as $photo) {
                 $path = $photo->store('reports', 'public');
-                $photoPaths[] = $path;
+                $newPhotoPaths[] = $path;
             }
-            $validated['photos'] = json_encode($photoPaths);
+            
+            // Combine old and new photos
+            $validated['photos'] = json_encode(array_merge($oldPhotos, $newPhotoPaths));
         }
 
         $report->update($validated);
 
         return redirect()->route('reports.show', $report->id)
-            ->with('success', 'Laporan berhasil diperbarui.');
+            ->with('success', 'Report updated successfully.');
     }
 
     /**
@@ -191,26 +239,26 @@ class ReportController extends Controller
         $report->delete();
 
         return redirect()->route('reports.index')
-            ->with('success', 'Laporan berhasil dihapus.');
+            ->with('success', 'Report deleted successfully.');
     }
 
     /**
      * Mulai progress audit dengan deadline
      */
-    public function startProgress($id)
+    public function startProgress(Request $request, $id)
     {
         $report = Report::findOrFail($id);
         
         // Validasi input deadline
-        $validated = request()->validate([
+        $validated = $request->validate([
             'deadline' => 'required|date|after:today',
             'deadline_reason' => 'required|string|min:5'
         ], [
-            'deadline.required' => 'Tanggal deadline harus diisi.',
-            'deadline.date' => 'Format tanggal tidak valid.',
-            'deadline.after' => 'Tanggal deadline harus setelah hari ini.',
-            'deadline_reason.required' => 'Keterangan deadline harus diisi.',
-            'deadline_reason.min' => 'Keterangan deadline minimal 5 karakter.'
+            'deadline.required' => 'Deadline date is required.',
+            'deadline.date' => 'Invalid date format.',
+            'deadline.after' => 'Deadline must be after today.',
+            'deadline_reason.required' => 'Deadline reason is required.',
+            'deadline_reason.min' => 'Deadline reason must be at least 5 characters.'
         ]);
 
         // Update status dan deadline
@@ -221,7 +269,7 @@ class ReportController extends Controller
         $report->save();
         
         return redirect()->route('reports.show', $id)
-            ->with('success', 'Progress laporan telah dimulai. Deadline: ' . \Carbon\Carbon::parse($validated['deadline'])->locale('id')->format('d F Y'));
+            ->with('success', 'Report progress started. Deadline: ' . \Carbon\Carbon::parse($validated['deadline'])->format('d F Y'));
     }
 
     /**
@@ -237,13 +285,13 @@ class ReportController extends Controller
             'photos' => 'required|array|min:1',
             'photos.*' => 'image|mimes:jpeg,png,jpg|max:5120'
         ], [
-            'description.required' => 'Deskripsi harus diisi.',
-            'description.min' => 'Deskripsi minimal 10 karakter.',
-            'photos.required' => 'Foto bukti perbaikan harus diupload.',
-            'photos.min' => 'Minimal upload 1 foto.',
-            'photos.*.image' => 'File harus berupa gambar.',
-            'photos.*.mimes' => 'Format gambar harus jpeg, png, atau jpg.',
-            'photos.*.max' => 'Ukuran gambar maksimal 5MB.'
+            'description.required' => 'Description is required.',
+            'description.min' => 'Description must be at least 10 characters.',
+            'photos.required' => 'Repair photos must be uploaded.',
+            'photos.min' => 'At least 1 photo is required.',
+            'photos.*.image' => 'File must be an image.',
+            'photos.*.mimes' => 'Image format must be jpeg, png, or jpg.',
+            'photos.*.max' => 'Maximum image size is 5MB.'
         ]);
         
         // Upload photos
@@ -270,7 +318,7 @@ class ReportController extends Controller
         $report->save();
         
         return redirect()->route('reports.show', $id)
-            ->with('success', 'Response berhasil dikirim. Status laporan diubah menjadi Fixed.');
+            ->with('success', 'Response submitted successfully. Report status changed to Fixed.');
     }
 
     /**
@@ -299,7 +347,7 @@ class ReportController extends Controller
 
     /**
      * Auditor reject report - Professional rejection handling
-     * Status changes back to 'in_progress' for revision
+     * Status changes to 'rejected' for revision
      */
     public function reject(Request $request, $id)
     {
@@ -309,20 +357,19 @@ class ReportController extends Controller
         $validated = $request->validate([
             'rejection_reason' => 'required|string|min:10|max:500'
         ], [
-            'rejection_reason.required' => 'Alasan penolakan harus diisi.',
-            'rejection_reason.min' => 'Alasan penolakan minimal 10 karakter.',
-            'rejection_reason.max' => 'Alasan penolakan maksimal 500 karakter.'
+            'rejection_reason.required' => 'Rejection reason is required.',
+            'rejection_reason.min' => 'Rejection reason must be at least 10 characters.',
+            'rejection_reason.max' => 'Rejection reason maximum 500 characters.'
         ]);
         
-        // Update status to 'in_progress' (not 'rejected')
-        // Rejected means needs revision, so it goes back to in_progress
-        $report->status = 'in_progress';
+        // Update status to 'rejected'
+        $report->status = 'rejected';
         $report->rejection_reason = $validated['rejection_reason'];
         $report->approved_at = null;
         $report->fixed_at = null; // Reset fixed_at because it needs to be fixed again
         $report->save();
         
         return redirect()->route('reports.show', $id)
-            ->with('warning', 'Report rejected and sent back to In Progress for revision. The department has been notified.');
+            ->with('warning', 'Report rejected and sent back for revision. The department has been notified.');
     }
 }

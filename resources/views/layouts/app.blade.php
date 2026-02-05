@@ -11,7 +11,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Audit Management System">
-    <meta name="theme-color" content="#2563EB">
+    <meta name="theme-color" content="#065F46">
     <title>@yield('title', 'Audit System')</title>
     
     <!-- Bootstrap CSS -->
@@ -27,9 +27,10 @@
     
     <style>
         :root {
-            --primary: #10B981;
-            --primary-dark: #059669;
-            --secondary: #34D399;
+            --primary: #065F46;
+            --primary-dark: #064E3B;
+            --primary-light: #D1FAE5;
+            --secondary: #10B981;
             --danger: #EF4444;
             --warning: #F59E0B;
             --info: #3B82F6;
@@ -48,20 +49,19 @@
             color: var(--dark);
         }
         
-        /* Navbar Redesign */
+        /* Navbar PT Putra Taro Paloma Style */
         .navbar-custom {
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
-            padding: 0.75rem 0;
-            border-bottom: 3px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(135deg, #065F46 0%, #047857 100%);
+            box-shadow: 0 4px 20px rgba(6, 95, 70, 0.2);
+            padding: 0;
+            border-bottom: 0;
         }
         
         .navbar-brand {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-weight: 700;
-            font-size: 1.25rem;
+            gap: 16px;
+            padding: 12px 0;
             color: white !important;
             transition: transform 0.3s ease;
         }
@@ -70,47 +70,60 @@
             transform: translateY(-2px);
         }
         
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: white;
-            border-radius: 10px;
+        .logo-container {
             display: flex;
             align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            gap: 16px;
         }
         
-        .logo-icon img {
-            width: 100%;
-            height: 100%;
+        .logo-image {
+            width: 60px;
+            height: 60px;
             object-fit: contain;
+            filter: brightness(0) invert(1);
         }
         
-        .logo-icon i {
-            font-size: 1.5rem;
-            color: var(--primary);
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .company-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: white;
+            margin: 0;
+        }
+        
+        .system-name {
+            font-size: 0.875rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.85);
+            margin: 0;
         }
         
         .nav-link {
             color: rgba(255, 255, 255, 0.9) !important;
             font-weight: 500;
-            padding: 0.5rem 1rem !important;
-            border-radius: 8px;
+            padding: 1rem 1rem !important;
+            border-radius: 0;
             transition: all 0.3s ease;
             position: relative;
+            border-bottom: 3px solid transparent;
         }
         
         .nav-link:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.1);
             color: white !important;
-            transform: translateY(-1px);
+            border-bottom-color: rgba(255, 255, 255, 0.5);
         }
         
         .nav-link.active {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
             color: white !important;
+            border-bottom-color: white;
         }
         
         .dropdown-menu {
@@ -222,12 +235,12 @@
         
         .btn-primary {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 12px rgba(6, 95, 70, 0.3);
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 6px 20px rgba(6, 95, 70, 0.4);
             background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
         }
         
@@ -323,7 +336,7 @@
             
             .mobile-menu a.active {
                 color: var(--primary);
-                background: rgba(16, 185, 129, 0.1);
+                background: rgba(6, 95, 70, 0.1);
             }
             
             .mobile-menu i {
@@ -335,6 +348,19 @@
             .mobile-menu small {
                 font-size: 0.7rem;
                 font-weight: 600;
+            }
+
+            .logo-image {
+                width: 45px;
+                height: 45px;
+            }
+
+            .company-name {
+                font-size: 1rem;
+            }
+
+            .system-name {
+                font-size: 0.75rem;
             }
         }
         
@@ -348,7 +374,7 @@
         
         .form-control:focus, .form-select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+            box-shadow: 0 0 0 4px rgba(6, 95, 70, 0.1);
         }
         
         /* Loading Animation */
@@ -384,26 +410,43 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--primary-dark);
         }
+
+        /* Navbar Toggler */
+        .navbar-toggler {
+            border: none;
+            padding: 0.5rem;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
     </style>
     
     @stack('styles')
 </head>
 <body>
-    <!-- Navbar -->
+    <!-- Navbar PT Putra Taro Paloma Style -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ route('dashboard') }}">
-                <div class="logo-icon">
+                <div class="logo-container">
                     @if(file_exists(public_path('logo.png')))
-                        <img src="{{ asset('logo.png') }}" alt="Logo">
+                        <img src="{{ asset('logo.png') }}" alt="Logo" class="logo-image">
                     @else
-                        <i class="bi bi-clipboard-check-fill"></i>
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='70' font-size='70' fill='white'%3EPT%3C/text%3E%3C/svg%3E" alt="Logo" class="logo-image">
                     @endif
+                    <div class="brand-text">
+                        <div class="company-name">PT Putra Taro Paloma</div>
+                        <div class="system-name">Audit System</div>
+                    </div>
                 </div>
-                <span>Audit System</span>
             </a>
             
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
@@ -450,8 +493,8 @@
                         @endif
                         
                         <!-- Profile Dropdown -->
-                        <li class="nav-item dropdown ms-lg-2">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 p-1" href="#" role="button" data-bs-toggle="dropdown">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 p-2" href="#" role="button" data-bs-toggle="dropdown">
                                 <div class="d-flex align-items-center gap-2">
                                     <div style="width: 36px; height: 36px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary); font-size: 0.95rem;">
                                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}

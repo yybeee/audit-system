@@ -85,10 +85,10 @@ class Report extends Model
     public function getStatusTextAttribute()
     {
         $statuses = [
-            'submitted' => 'Terkirim',
-            'in_progress' => 'Dalam Proses',
-            'fixed' => 'Selesai Diperbaiki',
-            'approved' => 'Disetujui',
+            'submitted' => 'Submitted',
+            'in_progress' => 'In Progress',
+            'fixed' => 'Fixed',
+            'approved' => 'Approved',
         ];
 
         return $statuses[$this->status] ?? 'Unknown';
