@@ -25,12 +25,13 @@
         
         body {
             min-height: 100vh;
-            overflow: hidden;
+            overflow-x: hidden;
+            /* PERBAIKAN: Hapus overflow: hidden agar bisa scroll */
         }
         
         .login-wrapper {
             display: flex;
-            height: 100vh;
+            min-height: 100vh; /* PERBAIKAN: Ubah dari height ke min-height */
             position: relative;
         }
         
@@ -40,6 +41,7 @@
             background: #059669;
             position: relative;
             overflow: hidden;
+            min-height: 100vh;
         }
         
         .slider-container {
@@ -145,6 +147,7 @@
             background: white;
             position: relative;
             z-index: 10;
+            min-height: 100vh; /* PERBAIKAN: Tambahkan min-height */
         }
         
         .login-container {
@@ -245,6 +248,8 @@
             justify-content: space-between;
             align-items: center;
             margin: 1.5rem 0 2rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
         
         .form-check {
@@ -351,6 +356,7 @@
         @media (max-width: 991px) {
             .login-wrapper {
                 flex-direction: column;
+                min-height: auto; /* PERBAIKAN: Biarkan tinggi menyesuaikan konten */
             }
             
             .left-side {
@@ -360,20 +366,22 @@
             .right-side {
                 flex: 1;
                 background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+                min-height: 100vh; /* PERBAIKAN: Minimal full screen tapi bisa lebih */
+                padding: 2rem 1.5rem; /* PERBAIKAN: Kurangi padding untuk mobile */
             }
             
             .mobile-header {
                 width: 100%;
-                margin-bottom: 2rem;
+                margin-bottom: 1.5rem; /* PERBAIKAN: Kurangi margin */
             }
             
             .mobile-slider {
                 width: 100%;
-                height: 280px;
+                height: 220px; /* PERBAIKAN: Kurangi tinggi slider */
                 border-radius: 20px;
                 overflow: hidden;
                 box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-                margin-bottom: 1.5rem;
+                margin-bottom: 1rem; /* PERBAIKAN: Kurangi margin */
                 position: relative;
             }
             
@@ -395,18 +403,18 @@
                 left: 0;
                 right: 0;
                 background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
-                padding: 2rem 1.5rem 1.5rem;
+                padding: 1.5rem 1.2rem 1rem; /* PERBAIKAN: Kurangi padding */
                 color: white;
             }
             
             .mobile-slide-overlay h2 {
-                font-size: 1.4rem;
+                font-size: 1.2rem; /* PERBAIKAN: Kurangi ukuran font */
                 font-weight: 800;
-                margin-bottom: 0.4rem;
+                margin-bottom: 0.3rem;
             }
             
             .mobile-slide-overlay p {
-                font-size: 0.9rem;
+                font-size: 0.85rem; /* PERBAIKAN: Kurangi ukuran font */
                 opacity: 0.95;
             }
             
@@ -414,37 +422,119 @@
                 display: flex;
                 gap: 0.5rem;
                 justify-content: center;
+                margin-bottom: 1rem; /* PERBAIKAN: Tambahkan margin bawah */
             }
             
             .login-container {
-                padding: 0 1rem;
+                padding: 0 0.5rem; /* PERBAIKAN: Kurangi padding */
             }
             
             .logo-container {
-                margin-bottom: 1.5rem;
+                margin-bottom: 1rem; /* PERBAIKAN: Kurangi margin */
             }
             
             .logo-container img {
-                max-width: 140px;
-                max-height: 50px;
+                max-width: 120px; /* PERBAIKAN: Kurangi ukuran logo */
+                max-height: 45px;
             }
             
             .login-title h3 {
-                font-size: 1.6rem;
+                font-size: 1.4rem; /* PERBAIKAN: Kurangi ukuran font */
+            }
+            
+            .login-title p {
+                font-size: 0.8rem;
+            }
+            
+            /* PERBAIKAN: Kurangi spacing form di mobile */
+            .mb-4 {
+                margin-bottom: 1rem !important;
+            }
+            
+            .form-options {
+                margin: 1rem 0 1.5rem;
+            }
+            
+            .footer-text {
+                margin-top: 1.5rem;
+                padding-top: 1.5rem;
+                font-size: 0.75rem;
             }
         }
         
         @media (max-width: 576px) {
             .right-side {
-                padding: 2rem 1.5rem;
+                padding: 1.5rem 1rem; /* PERBAIKAN: Padding lebih kecil */
             }
             
             .login-title h3 {
-                font-size: 1.4rem;
+                font-size: 1.3rem;
             }
             
             .mobile-slider {
-                height: 240px;
+                height: 200px; /* PERBAIKAN: Lebih kecil lagi */
+            }
+            
+            .form-control {
+                padding: 0.875rem 1rem; /* PERBAIKAN: Padding lebih kecil */
+                font-size: 0.95rem;
+            }
+            
+            .btn-login {
+                padding: 1rem;
+                font-size: 1rem;
+            }
+            
+            .form-label {
+                font-size: 0.9rem;
+            }
+            
+            .form-check-label,
+            .forgot-link {
+                font-size: 0.85rem;
+            }
+        }
+        
+        /* PERBAIKAN: Untuk device yang sangat kecil */
+        @media (max-width: 380px) {
+            .right-side {
+                padding: 1rem 0.75rem;
+            }
+            
+            .mobile-slider {
+                height: 180px;
+            }
+            
+            .login-title h3 {
+                font-size: 1.2rem;
+            }
+            
+            .mobile-slide-overlay h2 {
+                font-size: 1.1rem;
+            }
+            
+            .mobile-slide-overlay p {
+                font-size: 0.8rem;
+            }
+        }
+        
+        /* PERBAIKAN: Pastikan touch target cukup besar di mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .btn-login {
+                min-height: 48px; /* Minimum touch target size */
+            }
+            
+            .form-check-input {
+                min-width: 20px;
+                min-height: 20px;
+            }
+            
+            .dot {
+                min-width: 30px;
+                min-height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
         }
     </style>
