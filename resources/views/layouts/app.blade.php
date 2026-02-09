@@ -429,6 +429,9 @@
     @stack('styles')
 </head>
 <body>
+    {{-- Include Loading Screen --}}
+    @include('components.loading-screen')
+
     <!-- Navbar PT Putra Taro Paloma Style -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
         <div class="container-fluid">
