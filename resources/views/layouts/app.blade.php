@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
@@ -10,9 +9,23 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Audit Management System">
+    <meta name="description" content="Audit Management System PT Putra Taro Paloma">
     <meta name="theme-color" content="#065F46">
     <title>@yield('title', 'Audit System')</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    
+    <!-- Apple Touch Icons untuk iOS -->
+    <link rel="apple-touch-icon" href="{{ asset('icon-192.png') }}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('icon-152.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('icon-192.png') }}">
+    <link rel="apple-touch-icon" sizes="167x167" href="{{ asset('icon-192.png') }}">
+    
+    <!-- Apple Splash Screens -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Audit System">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -20,10 +33,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="{{ asset('manifest.json') }}">
-    <link rel="apple-touch-icon" href="{{ asset('icon-192.png') }}">
     
     <style>
         :root {
@@ -377,21 +386,6 @@
             box-shadow: 0 0 0 4px rgba(6, 95, 70, 0.1);
         }
         
-        /* Loading Animation */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
         /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -429,7 +423,7 @@
     @stack('styles')
 </head>
 <body>
-    {{-- Include Loading Screen --}}
+    {{-- Include Loading Screen (Fixed Version) --}}
     @include('components.loading-screen')
 
     <!-- Navbar PT Putra Taro Paloma Style -->

@@ -30,7 +30,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
-    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::put('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
     
     // Reports - Resource Routes (sudah include index, create, store, show, edit, update, destroy)
     // Tapi kita custom middleware-nya
