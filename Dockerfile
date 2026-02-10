@@ -1,6 +1,6 @@
-FROM dunglas/frankenphp:php8.2-bookworm
+FROM php:8.2-fpm
 
-# Install system dependencies & PHP extensions (GD + ZIP)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -12,26 +12,21 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install gd pdo_mysql zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
+# Copy composer from official image
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Set working directory
 WORKDIR /app
 
-# Copy composer files
-COPY composer.json composer.lock ./
+# Copy application code FIRST
+COPY . .
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-# Copy application code
-COPY . .
-
 # Set permissions
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
 
-# Expose port
-EXPOSE 8080
+EXPOSE 9000
 
-# Start command
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8080
+CMD ["php-fpm"]
