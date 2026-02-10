@@ -1,14 +1,15 @@
 FROM dunglas/frankenphp:php8.2-bookworm
 
-# Install system dependencies & GD extension
+# Install system dependencies & PHP extensions (GD + ZIP)
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
+    libzip-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo_mysql \
+    && docker-php-ext-install gd pdo_mysql zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
