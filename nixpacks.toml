@@ -1,17 +1,15 @@
 [phases.setup]
-nixPkgs = ['php82', 'php82Packages.composer']
+nixPkgs = ['php82', 'php82Packages.composer', 'php82Extensions.gd']
 
 [phases.install]
 cmds = [
-    'docker-php-ext-configure gd',
-    'docker-php-ext-install gd',
-    'composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist'
+    'composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist --ignore-platform-req=ext-gd'
 ]
 
 [phases.build]
 cmds = [
     'php artisan config:clear',
-    'php artisan route:clear', 
+    'php artisan route:clear',
     'php artisan view:clear'
 ]
 
