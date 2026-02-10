@@ -3,11 +3,14 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        // HAPUS bagian DB::statement("UPDATE reports...") dari sini
+        
         Schema::table('reports', function (Blueprint $table) {
             // Drop kolom yang tidak diperlukan
             if (Schema::hasColumn('reports', 'audit_date')) {
@@ -22,13 +25,13 @@ return new class extends Migration
             
             // Tambah kolom yang diperlukan (jika belum ada)
             if (!Schema::hasColumn('reports', 'location')) {
-                $table->string('location')->after('report_number');
+                $table->string('location')->nullable()->after('report_number');
             }
             if (!Schema::hasColumn('reports', 'issue_type')) {
-                $table->string('issue_type')->after('location');
+                $table->string('issue_type')->nullable()->after('location');
             }
             if (!Schema::hasColumn('reports', 'description')) {
-                $table->text('description')->after('issue_type');
+                $table->text('description')->nullable()->after('issue_type');
             }
             if (!Schema::hasColumn('reports', 'photos')) {
                 $table->json('photos')->nullable()->after('description');
@@ -60,25 +63,40 @@ return new class extends Migration
         });
         
         // Update status enum
-        DB::statement("ALTER TABLE reports MODIFY COLUMN status ENUM('submitted', 'in_progress', 'fixed', 'approved') DEFAULT 'submitted'");
+        DB::statement("ALTER TABLE reports MODIFY COLUMN status ENUM('submitted', 'in_progress', 'fixed', 'approved') DEFAULT 'submitted' NOT NULL");
     }
 
     public function down(): void
     {
+        DB::statement("ALTER TABLE reports MODIFY COLUMN status VARCHAR(50) DEFAULT 'draft'");
+        
         Schema::table('reports', function (Blueprint $table) {
-            // Kembalikan seperti semula jika rollback
-            $table->dropColumn([
+            if (Schema::hasColumn('reports', 'approved_by')) {
+                $table->dropForeign(['approved_by']);
+                $table->dropColumn('approved_by');
+            }
+            
+            $columns = [
                 'location', 'issue_type', 'description', 'photos',
                 'rejection_reason', 'submitted_at', 'started_at', 
-                'deadline', 'deadline_reason', 'fixed_at', 
-                'approved_at', 'approved_by'
-            ]);
+                'deadline', 'deadline_reason', 'fixed_at', 'approved_at'
+            ];
             
-            $table->date('audit_date')->after('report_number');
-            $table->text('findings')->nullable();
-            $table->text('recommendations')->nullable();
+            foreach ($columns as $column) {
+                if (Schema::hasColumn('reports', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
+            
+            if (!Schema::hasColumn('reports', 'audit_date')) {
+                $table->date('audit_date')->nullable()->after('report_number');
+            }
+            if (!Schema::hasColumn('reports', 'findings')) {
+                $table->text('findings')->nullable();
+            }
+            if (!Schema::hasColumn('reports', 'recommendations')) {
+                $table->text('recommendations')->nullable();
+            }
         });
-        
-        DB::statement("ALTER TABLE reports MODIFY COLUMN status ENUM('draft', 'submitted', 'reviewed', 'approved') DEFAULT 'draft'");
     }
 };
