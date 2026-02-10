@@ -31,7 +31,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
     Route::put('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
-    
+    Route::get('reports-export', [ReportController::class, 'exportPage'])->name('reports.exportPage');
+    Route::post('reports-export-delete', [ReportController::class, 'exportAndDeleteByPeriod'])->name('reports.exportAndDeleteByPeriod');
+
     // Reports - Resource Routes (sudah include index, create, store, show, edit, update, destroy)
     // Tapi kita custom middleware-nya
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

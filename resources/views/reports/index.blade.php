@@ -8,7 +8,7 @@
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-gradient-primary text-white">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                   <div class="d-flex justify-content-between align-items-center flex-wrap">
                         <h5 class="mb-0">
                             <i class="bi bi-file-earmark-text"></i> 
                             @if(auth()->user()->role === 'auditor')
@@ -22,13 +22,20 @@
                             @endif
                         </h5>
                         
-                        @if(auth()->user()->role === 'auditor')
-                            <a href="{{ route('reports.create') }}" class="btn btn-light btn-sm mt-2 mt-md-0">
-                                <i class="bi bi-plus-circle"></i> Create Report
-                            </a>
-                        @endif
+                        <div class="d-flex gap-2 mt-2 mt-md-0">
+                            @if(auth()->user()->role === 'auditor')
+                                <a href="{{ route('reports.create') }}" class="btn btn-light btn-sm">
+                                    <i class="bi bi-plus-circle"></i> Create Report
+                                </a>
+                            @endif
+                            
+                            @if(in_array(auth()->user()->role, ['super_admin', 'auditor']))
+                                <a href="{{ route('reports.exportPage') }}" class="btn btn-success btn-sm">
+                                    <i class="bi bi-file-earmark-excel"></i> Export & Archive
+                                </a>
+                            @endif
+                        </div>
                     </div>
-                </div>
                 
                 <div class="card-body">
                     <!-- Filter Section -->

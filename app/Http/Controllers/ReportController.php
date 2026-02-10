@@ -4,8 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Models\ReportResponse;
+use App\Models\Department;
+use App\Models\AuditType;
+use App\Exports\ReportsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
@@ -28,63 +34,35 @@ class ReportController extends Controller
         
         // Filter Search
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('report_number', 'like', "%{$search}%")
-                  ->orWhere('location', 'like', "%{$search}%")
-                  ->orWhere('issue_type', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
+            $query->search($request->search);
         }
         
-        // Filter Status - INI YANG DIPERBAIKI
+        // Filter Status
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->byStatus($request->status);
         }
         
         // Filter Department
         if ($request->filled('department')) {
-            $query->where('department_id', $request->department);
+            $query->byDepartment($request->department);
         }
         
         // Filter Period
         if ($request->filled('period')) {
-            $now = now();
-            switch ($request->period) {
-                case 'today':
-                    $query->whereDate('created_at', $now->toDateString());
-                    break;
-                case 'week':
-                    $query->whereBetween('created_at', [
-                        $now->copy()->startOfWeek(),
-                        $now->copy()->endOfWeek()
-                    ]);
-                    break;
-                case 'month':
-                    $query->whereMonth('created_at', $now->month)
-                          ->whereYear('created_at', $now->year);
-                    break;
-                case 'year':
-                    $query->whereYear('created_at', $now->year);
-                    break;
-            }
+            $query->byPeriod($request->period);
         }
         
         // Filter Custom Date Range
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-        
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
+        if ($request->filled('date_from') || $request->filled('date_to')) {
+            $query->byDateRange($request->date_from, $request->date_to);
         }
         
         // Order dan Pagination
         $reports = $query->orderBy('created_at', 'desc')->paginate(15);
         
         // Kirim data departments dan auditTypes untuk filter
-        $departments = \App\Models\Department::orderBy('name')->get();
-        $auditTypes = \App\Models\AuditType::orderBy('name')->get();
+        $departments = Department::orderBy('name')->get();
+        $auditTypes = AuditType::orderBy('name')->get();
         
         return view('reports.index', compact('reports', 'departments', 'auditTypes'));
     }
@@ -94,8 +72,7 @@ class ReportController extends Controller
      */
     public function create()
     {
-        $departments = \App\Models\Department::all();
-        
+        $departments = Department::all();
         return view('reports.create', compact('departments'));
     }
 
@@ -138,8 +115,8 @@ class ReportController extends Controller
         // Ambil user yang login
         $user = auth()->user();
         
-        // Ambil audit_type_id dari user atau gunakan default (audit type pertama)
-        $auditTypeId = $user->audit_type_id ?? \App\Models\AuditType::first()->id;
+        // Ambil audit_type_id dari user atau gunakan default
+        $auditTypeId = $user->audit_type_id ?? AuditType::first()->id;
 
         // Create report
         Report::create([
@@ -150,7 +127,7 @@ class ReportController extends Controller
             'location' => $validated['location'],
             'issue_type' => $validated['issue_type'],
             'description' => $validated['description'],
-            'photos' => json_encode($photoPaths),
+            'photos' => $photoPaths, // Langsung array, karena sudah di-cast
             'status' => 'submitted',
             'submitted_at' => now()
         ]);
@@ -176,8 +153,8 @@ class ReportController extends Controller
     public function edit($id)
     {
         $report = Report::findOrFail($id);
-        $departments = \App\Models\Department::all();
-        $auditTypes = \App\Models\AuditType::all();
+        $departments = Department::all();
+        $auditTypes = AuditType::all();
         
         return view('reports.edit', compact('report', 'departments', 'auditTypes'));
     }
@@ -202,7 +179,7 @@ class ReportController extends Controller
         // Upload new photos if provided
         if ($request->hasFile('photos')) {
             // Keep old photos and add new ones
-            $oldPhotos = json_decode($report->photos, true) ?? [];
+            $oldPhotos = $report->photos ?? [];
             
             // Upload new photos
             $newPhotoPaths = [];
@@ -212,7 +189,7 @@ class ReportController extends Controller
             }
             
             // Combine old and new photos
-            $validated['photos'] = json_encode(array_merge($oldPhotos, $newPhotoPaths));
+            $validated['photos'] = array_merge($oldPhotos, $newPhotoPaths);
         }
 
         $report->update($validated);
@@ -229,8 +206,8 @@ class ReportController extends Controller
         $report = Report::findOrFail($id);
         
         // Delete photos
-        $photos = json_decode($report->photos, true);
-        if ($photos) {
+        $photos = $report->photos ?? [];
+        if (!empty($photos)) {
             foreach ($photos as $photo) {
                 Storage::disk('public')->delete($photo);
             }
@@ -308,7 +285,7 @@ class ReportController extends Controller
             'report_id' => $report->id,
             'user_id' => auth()->id(),
             'description' => $validated['description'],
-            'photos' => json_encode($photoPaths)
+            'photos' => $photoPaths // Langsung array
         ]);
         
         // Update status report menjadi 'fixed'
@@ -346,8 +323,7 @@ class ReportController extends Controller
     }
 
     /**
-     * Auditor reject report - Professional rejection handling
-     * Status changes to 'rejected' for revision
+     * Auditor reject report - Status kembali ke in_progress untuk diperbaiki
      */
     public function reject(Request $request, $id)
     {
@@ -362,14 +338,168 @@ class ReportController extends Controller
             'rejection_reason.max' => 'Rejection reason maximum 500 characters.'
         ]);
         
-        // Update status to 'rejected'
-        $report->status = 'rejected';
+        // Update status kembali ke 'in_progress' (bukan rejected)
+        $report->status = 'in_progress';
         $report->rejection_reason = $validated['rejection_reason'];
         $report->approved_at = null;
-        $report->fixed_at = null; // Reset fixed_at because it needs to be fixed again
+        $report->fixed_at = null; // Reset fixed_at karena perlu diperbaiki lagi
         $report->save();
         
         return redirect()->route('reports.show', $id)
-            ->with('warning', 'Report rejected and sent back for revision. The department has been notified.');
+            ->with('warning', 'Report rejected and returned to In Progress status. Department needs to fix and resubmit.');
+    }
+
+    /**
+     * Show export page with period options
+     */
+    public function exportPage()
+    {
+        // Hanya auditor dan super_admin
+        if (!in_array(auth()->user()->role, ['auditor', 'super_admin'])) {
+            abort(403, 'Unauthorized');
+        }
+        
+        // Ambil data tahun yang tersedia
+        $availableYears = Report::selectRaw('YEAR(created_at) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
+        
+        // Hitung jumlah report per periode
+        $reportStats = [
+            'years' => [],
+            'months' => []
+        ];
+        
+        foreach ($availableYears as $year) {
+            // Stats per tahun
+            $yearCount = Report::whereYear('created_at', $year)->count();
+            $reportStats['years'][$year] = $yearCount;
+            
+            // Stats per bulan dalam tahun tersebut
+            for ($month = 1; $month <= 12; $month++) {
+                $monthCount = Report::whereYear('created_at', $year)
+                    ->whereMonth('created_at', $month)
+                    ->count();
+                
+                if ($monthCount > 0) {
+                    $reportStats['months'][$year][$month] = $monthCount;
+                }
+            }
+        }
+        
+        return view('reports.export', compact('availableYears', 'reportStats'));
+    }
+
+    /**
+     * Export and delete reports by period
+     */
+    public function exportAndDeleteByPeriod(Request $request)
+    {
+        // Validasi
+        $validated = $request->validate([
+            'period_type' => 'required|in:month,year',
+            'year' => 'required|numeric|min:2020|max:' . date('Y'),
+            'month' => 'required_if:period_type,month|nullable|numeric|min:1|max:12',
+            'confirm_delete' => 'required|accepted',
+        ], [
+            'period_type.required' => 'Period type must be selected.',
+            'year.required' => 'Year must be selected.',
+            'month.required_if' => 'Month must be selected when choosing monthly period.',
+            'confirm_delete.accepted' => 'You must confirm the deletion.',
+        ]);
+        
+        $periodType = $validated['period_type'];
+        $year = $validated['year'];
+        $month = $validated['month'] ?? null;
+        
+        // Query berdasarkan periode
+        $query = Report::with(['responses']);
+        
+        if ($periodType === 'month') {
+            $query->whereYear('created_at', $year)
+                  ->whereMonth('created_at', $month);
+            $periodLabel = date('F Y', mktime(0, 0, 0, $month, 1, $year));
+            $filename = "Reports_" . $year . "_" . str_pad($month, 2, '0', STR_PAD_LEFT) . "_ARCHIVED_" . date('Ymd_His') . ".xlsx";
+        } else {
+            $query->whereYear('created_at', $year);
+            $periodLabel = "Year {$year}";
+            $filename = "Reports_{$year}_ARCHIVED_" . date('Ymd_His') . ".xlsx";
+        }
+        
+        // Ambil reports
+        $reports = $query->get();
+        
+        if ($reports->isEmpty()) {
+            return redirect()->route('reports.exportPage')
+                ->with('error', "No reports found for {$periodLabel}.");
+        }
+        
+        $reportCount = $reports->count();
+        
+        try {
+            DB::beginTransaction();
+            
+            // Export to Excel first
+            $export = Excel::download(
+                new ReportsExport($year, $month), 
+                $filename
+            );
+            
+            // Delete photos from storage
+            foreach ($reports as $report) {
+                // Delete report photos
+                $photos = $report->photos ?? [];
+                if (!empty($photos)) {
+                    foreach ($photos as $photo) {
+                        Storage::disk('public')->delete($photo);
+                    }
+                }
+                
+                // Delete response photos
+                foreach ($report->responses as $response) {
+                    $responsePhotos = $response->photos ?? [];
+                    if (!empty($responsePhotos)) {
+                        foreach ($responsePhotos as $photo) {
+                            Storage::disk('public')->delete($photo);
+                        }
+                    }
+                }
+            }
+            
+            // Delete all responses first (foreign key constraint)
+            ReportResponse::whereIn('report_id', $reports->pluck('id'))->delete();
+            
+            // Delete all reports
+            Report::whereIn('id', $reports->pluck('id'))->delete();
+            
+            DB::commit();
+            
+            // Log the action
+            Log::info("Reports archived and deleted", [
+                'period_type' => $periodType,
+                'period' => $periodLabel,
+                'count' => $reportCount,
+                'user' => auth()->user()->name,
+                'user_role' => auth()->user()->role,
+                'timestamp' => now(),
+            ]);
+            
+            session()->flash('success', "Successfully exported and deleted {$reportCount} reports from {$periodLabel}.");
+            
+            return $export;
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error("Failed to export and delete reports", [
+                'period' => $periodLabel,
+                'error' => $e->getMessage(),
+                'user' => auth()->user()->name,
+            ]);
+            
+            return redirect()->route('reports.exportPage')
+                ->with('error', 'Failed to export and delete reports. Please try again.');
+        }
     }
 }
