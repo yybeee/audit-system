@@ -9,8 +9,27 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // HAPUS bagian DB::statement("UPDATE reports...") dari sini
-        
+        // STEP 1: Ubah status ke VARCHAR dulu (agar bisa update data dengan bebas)
+        try {
+            DB::statement("ALTER TABLE reports MODIFY COLUMN status VARCHAR(50) DEFAULT 'submitted'");
+        } catch (\Exception $e) {
+            // Ignore jika sudah VARCHAR
+        }
+
+        // STEP 2: Bersihkan data yang tidak valid
+        DB::statement("
+            UPDATE reports 
+            SET status = CASE 
+                WHEN status IN ('draft', 'pending') THEN 'submitted'
+                WHEN status IN ('reviewed', 'review', 'reviewing') THEN 'in_progress'
+                WHEN status IN ('completed', 'done', 'resolved') THEN 'fixed'
+                WHEN status IN ('approved', 'closed') THEN 'approved'
+                WHEN status NOT IN ('submitted', 'in_progress', 'fixed', 'approved') THEN 'submitted'
+                ELSE status
+            END
+        ");
+
+        // STEP 3: Tambah/Update kolom-kolom
         Schema::table('reports', function (Blueprint $table) {
             // Drop kolom yang tidak diperlukan
             if (Schema::hasColumn('reports', 'audit_date')) {
@@ -62,12 +81,13 @@ return new class extends Migration
             }
         });
         
-        // Update status enum
+        // STEP 4: Ubah ke ENUM setelah data bersih
         DB::statement("ALTER TABLE reports MODIFY COLUMN status ENUM('submitted', 'in_progress', 'fixed', 'approved') DEFAULT 'submitted' NOT NULL");
     }
 
     public function down(): void
     {
+        // Kembalikan status ke VARCHAR
         DB::statement("ALTER TABLE reports MODIFY COLUMN status VARCHAR(50) DEFAULT 'draft'");
         
         Schema::table('reports', function (Blueprint $table) {
@@ -88,6 +108,7 @@ return new class extends Migration
                 }
             }
             
+            // Tambah kembali kolom lama
             if (!Schema::hasColumn('reports', 'audit_date')) {
                 $table->date('audit_date')->nullable()->after('report_number');
             }
